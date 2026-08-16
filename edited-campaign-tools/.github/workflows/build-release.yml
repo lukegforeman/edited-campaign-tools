@@ -1,0 +1,24 @@
+name: Build Foundry release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build module ZIP
+        run: |
+          mkdir -p build/edited-campaign-tools
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'build' ./ build/edited-campaign-tools/
+          cd build
+          zip -r "Edited_Campaign_Tools_Module_${{ github.event.release.tag_name }}.zip" edited-campaign-tools
+      - name: Attach ZIP to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "build/Edited_Campaign_Tools_Module_${{ github.event.release.tag_name }}.zip" --clobber
