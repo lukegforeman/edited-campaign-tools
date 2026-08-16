@@ -1,0 +1,21 @@
+{
+  "id": "edited-campaign-tools",
+  "title": "Edited Campaign Tools",
+  "description": "Complete Session 1 package for The Margin: one-run world setup, campaign Actors, scenes, Fates encounter, Edward's Persephone duality sheet control, Legend HUD, theatrical effects, Lost Roads, and audio cues.",
+  "version": "1.0.0",
+  "url": "https://github.com/YOUR_GITHUB_USERNAME/edited-campaign-tools",
+  "manifest": "https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/edited-campaign-tools/main/module.json",
+  "download": "https://github.com/YOUR_GITHUB_USERNAME/edited-campaign-tools/releases/download/v1.0.0/Edited_Campaign_Tools_Module_v1.0.0.zip",
+  "authors": [{"name": "Campaign GM + OpenAI"}],
+  "compatibility": {"minimum": "14.365", "verified": "14.365"},
+  "relationships": {
+    "systems": [{
+      "id": "dnd5e",
+      "type": "system",
+      "compatibility": {"minimum": "5.3.3", "verified": "5.3.3"}
+    }]
+  },
+  "esmodules": ["scripts/edited-tools.js", "scripts/actor-installer.js", "scripts/edward-duality.js", "scripts/session1-installer.js"],
+  "styles": ["styles/edited-tools.css"],
+  "socket": true
+}
