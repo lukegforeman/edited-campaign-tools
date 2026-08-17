@@ -9,7 +9,11 @@ const journalDefinitions = [
   },
   {
     name: "Naomi's Clue Board",
-    content: `<h1>Naomi's Clue Board</h1><p>Naomi tracks anomalies that leave physical Fragments behind. Four active leads will be ready after orientation:</p><ol><li>Ancient tablet: <em>beacon → beckon</em></li><li>Child engineer's toy catapult: <em>stay → stray</em></li><li>The Mad Doctor research binder: <em>stable → stale</em></li><li>DCA hijacking evidence: <em>DOA → DCA</em></li></ol>`
+    content: `<h1>Naomi's Clue Board</h1><p>Naomi tracks reality edits, the physical Fragments they leave behind, and the competing stories attached to them. Open the additional pages for the four active leads, known Fragment rules, unanswered questions, and an editable evidence log.</p>`
+  },
+  {
+    name: "Legend Rules",
+    content: `<h1>Legend Shop</h1><p>Legend is a shared party resource. Double-click the on-screen Legend counter to reopen this page.</p><table><thead><tr><th>Cost</th><th>Use</th></tr></thead><tbody><tr><td>1</td><td>Gain advantage.</td></tr><tr><td>1</td><td>Add a d6 before a roll.</td></tr><tr><td>2</td><td>Reroll any d20.</td></tr><tr><td>2</td><td>Add a d6 after a roll.</td></tr><tr><td>2</td><td>Add a Wordcraft edit without using your normal limit.</td></tr><tr><td>3</td><td>Invoke a divine boon.</td></tr><tr><td>3</td><td>Pass a check automatically.</td></tr><tr><td>4</td><td>Regain consciousness.</td></tr><tr><td>5</td><td>Automatically score a critical hit.</td></tr></tbody></table>`
   },
   {
     name: "Campfire Downtime",
@@ -43,7 +47,7 @@ const macroFiles = [
   "04_Enter_The_Fates.js", "05_Start_Satyn_Battle.js", "06_Stop_Satyn_Battle.js", "07_Naomi_Briefing.js",
   "08_Roll_Lost_Roads.js", "09_Campfire_Downtime.js", "10_Edited_Group_Photo.js", "11_Add_Legend.js",
   "12_Remove_Legend.js", "13_Reset_Legend.js", "14_Toggle_Legend_HUD.js", "15_Install_Campaign_Actors.js",
-  "16_Toggle_Edward_Duality.js"
+  "16_Toggle_Edward_Duality.js", "17_Apply_Targeted_Fixes.js"
 ];
 
 const macroNames = {
@@ -63,7 +67,8 @@ const macroNames = {
   "13_Reset_Legend.js": "Reset Legend",
   "14_Toggle_Legend_HUD.js": "Toggle Legend HUD",
   "15_Install_Campaign_Actors.js": "Install / Refresh Campaign Actors",
-  "16_Toggle_Edward_Duality.js": "Toggle Edward: Olympus / Hades"
+  "16_Toggle_Edward_Duality.js": "Toggle Edward: Olympus / Hades",
+  "17_Apply_Targeted_Fixes.js": "Apply Targeted Session 1 Fixes"
 };
 
 function managedFlags(kind) {
@@ -162,7 +167,7 @@ async function installPlaylist() {
   const sounds = [
     {name: "Camp Ambience", path: `${S1_PATH}/assets/audio/camp-ambience.ogg`, repeat: true, volume: 0.35},
     {name: "Satyn Battle", path: `${S1_PATH}/assets/audio/satyn-battle-loop.ogg`, repeat: true, volume: 0.38},
-    {name: "Crash Ring", path: `${S1_PATH}/assets/audio/ear-ring-3s.ogg`, repeat: false, volume: 0.58},
+    {name: "Crash Ring", path: `${S1_PATH}/assets/audio/ear-ring-3s.ogg`, repeat: false, volume: 0.25},
     {name: "Legend Sting", path: `${S1_PATH}/assets/audio/legend-sting.ogg`, repeat: false, volume: 0.65}
   ];
   if (existing) {
@@ -271,6 +276,7 @@ async function installSession1() {
   await installMacros();
   await installPlaylist();
   const scenes = await installScenes();
+  await globalThis.EditedCampaignFixes?.apply({quiet: true});
   await game.settings.set(S1_MODULE_ID, "session1Installed", true);
   const bus = scenes.find(result => result.document.name === "Bus Opening")?.document;
   if (bus && !game.scenes.active) await bus.activate();

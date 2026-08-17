@@ -72,6 +72,10 @@ function renderLegendHUD() {
   const shown = Math.min(count, 10);
   const pips = "✦".repeat(shown) + (count > 10 ? ` +${count - 10}` : "");
   hud.innerHTML = `<div class="edited-legend-label">LEGEND</div><div class="edited-legend-count">${count}</div><div class="edited-legend-pips">${pips || "◇"}</div>`;
+  hud.addEventListener("dblclick", event => {
+    event.preventDefault();
+    openJournal("Legend Rules");
+  });
   document.body.appendChild(hud);
 }
 
@@ -110,20 +114,29 @@ function localLegendSting(count) {
   setTimeout(() => el.remove(), 2300);
 }
 
-function crashFlash() {
+async function crashFlash() {
   if (!game.user.isGM) return;
+  const fates = game.scenes.getName("Fates' Open-Air Library");
+  try {
+    if (fates && typeof game.scenes.preload === "function") await game.scenes.preload(fates.id);
+    else if (fates && typeof fates.preload === "function") await fates.preload();
+  } catch (error) {
+    console.warn("Edited Campaign Tools could not preload the Fates scene:", error);
+  }
   emitAll({type: "crashFlash", nonce: foundry.utils.randomID()});
+  if (!fates) return ui.notifications.warn("Fates' Open-Air Library was not found; whiteout and ringing still played.");
+  setTimeout(() => fates.activate(), 2400);
 }
 
 function localCrashFlash() {
-  playOneShot(`${PATH}/assets/audio/ear-ring-3s.ogg`, 0.58);
+  playOneShot(`${PATH}/assets/audio/ear-ring-3s.ogg`, 0.25);
   document.getElementById("edited-whiteout")?.remove();
   const flash = document.createElement("div");
   flash.id = "edited-whiteout";
   document.body.appendChild(flash);
   requestAnimationFrame(() => flash.classList.add("active"));
-  setTimeout(() => flash.classList.add("fade"), 450);
-  setTimeout(() => flash.remove(), 1800);
+  setTimeout(() => flash.classList.add("fade"), 2850);
+  setTimeout(() => flash.remove(), 4250);
 }
 
 function playOneShot(src, volume = 0.5) {
