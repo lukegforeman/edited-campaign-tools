@@ -1,0 +1,1 @@
+EditedCampaignTools.campfireDowntime();
