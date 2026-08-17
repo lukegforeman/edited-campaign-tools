@@ -1,7 +1,15 @@
 name: Build Foundry release
 
 on:
+  release:
+    types: [published]
+
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing GitHub release tag, such as v1.1.1"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -9,17 +17,50 @@ permissions:
 jobs:
   package:
     runs-on: ubuntu-latest
+
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate module manifest
+        run: |
+          test -f module.json
+          jq empty module.json
+          echo "Found module.json at repository root."
+
+      - name: Confirm release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$RELEASE_TAG" > /dev/null
+          echo "Found GitHub release $RELEASE_TAG."
 
       - name: Build module ZIP
         run: |
           mkdir -p build/edited-campaign-tools
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'build' ./ build/edited-campaign-tools/
+          rsync -a \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'build' \
+            --exclude 'edited-campaign-tools' \
+            ./ build/edited-campaign-tools/
+
+          test -f build/edited-campaign-tools/module.json
+
           cd build
-          zip -r "Edited_Campaign_Tools_Module_v1.1.1.zip" edited-campaign-tools
+          zip -r "Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip" edited-campaign-tools
 
       - name: Attach ZIP to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "v1.1.1" "build/Edited_Campaign_Tools_Module_v1.1.1.zip" --clobber
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            "build/Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip" \
+            --clobber
+
+      - name: Show completed asset
+        run: |
+          echo "Attached Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip to release ${RELEASE_TAG}."
