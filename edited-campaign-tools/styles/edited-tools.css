@@ -11,7 +11,9 @@
   border-radius: 8px;
   box-shadow: 0 3px 14px rgba(0,0,0,.55), inset 0 0 14px rgba(202,156,56,.08);
   font-family: Georgia, "Times New Roman", serif;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: help;
+  user-select: none;
   text-align: center;
 }
 #edited-legend-hud .edited-legend-label { font-size: 11px; letter-spacing: .28em; opacity: .85; }
@@ -22,7 +24,7 @@
   pointer-events: none; transition: opacity 70ms linear;
 }
 #edited-whiteout.active { opacity: 1; }
-#edited-whiteout.active.fade { opacity: 0; transition: opacity 1200ms ease-out; }
+#edited-whiteout.active.fade { opacity: 0; transition: opacity 1300ms ease-out; }
 #edited-legend-splash {
   position: fixed; left: 50%; top: 18%; transform: translate(-50%,-25%) scale(.72) rotate(-2deg);
   z-index: 999999; opacity: 0; pointer-events: none; text-align:center;
