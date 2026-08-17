@@ -5,7 +5,7 @@
   "version": "1.1.1",
   "url": "https://github.com/lukegforeman/edited-campaign-tools",
   "manifest": "https://raw.githubusercontent.com/lukegforeman/edited-campaign-tools/main/module.json",
-  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.1/Edited_Campaign_Tools_Module_v1.1.0.zip",
+  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.1/Edited_Campaign_Tools_Module_v1.1.1.zip",
   "authors": [{"name": "Campaign GM + OpenAI"}],
   "compatibility": {"minimum": "14.365", "verified": "14.365"},
   "relationships": {
