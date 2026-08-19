@@ -68,14 +68,26 @@ function renderLegendHUD() {
   const count = Math.max(0, Number(game.settings.get(MODULE_ID, "legendCount")) || 0);
   const hud = document.createElement("div");
   hud.id = "edited-legend-hud";
-  hud.title = "Shared Legend Pool";
   const shown = Math.min(count, 10);
   const pips = "✦".repeat(shown) + (count > 10 ? ` +${count - 10}` : "");
-  hud.innerHTML = `<div class="edited-legend-label">LEGEND</div><div class="edited-legend-count">${count}</div><div class="edited-legend-pips">${pips || "◇"}</div>`;
-  hud.addEventListener("dblclick", event => {
-    event.preventDefault();
-    openJournal("Legend Rules");
-  });
+  hud.innerHTML = `
+    <div class="edited-legend-label">LEGEND</div>
+    <div class="edited-legend-count">${count}</div>
+    <div class="edited-legend-pips">${pips || "◇"}</div>
+    <div class="edited-legend-reference" role="tooltip">
+      <div class="edited-legend-reference-title">Legend Shop</div>
+      <div><b>1</b><span>Gain advantage</span></div>
+      <div><b>1</b><span>Add a d6 pre-roll</span></div>
+      <div><b>2</b><span>Reroll any d20</span></div>
+      <div><b>2</b><span>Add a d6 post-roll</span></div>
+      <div><b>2</b><span>Extra Wordcraft edit</span></div>
+      <div><b>3</b><span>Invoke a divine boon</span></div>
+      <div><b>3</b><span>Pass a check automatically</span></div>
+      <div><b>4</b><span>Regain consciousness</span></div>
+      <div><b>5</b><span>Auto-crit</span></div>
+    </div>`;
+  hud.addEventListener("click", event => event.preventDefault());
+  hud.addEventListener("dblclick", event => event.preventDefault());
   document.body.appendChild(hud);
 }
 
@@ -102,7 +114,7 @@ async function toggleLegendHUD() {
 }
 
 function localLegendSting(count) {
-  playOneShot(`${PATH}/assets/audio/legend-sting.ogg`, 0.65);
+  playOneShot(`${PATH}/assets/audio/legend-sting.ogg`, 0.65, 1.5);
   const old = document.getElementById("edited-legend-splash");
   old?.remove();
   const el = document.createElement("div");
@@ -129,19 +141,25 @@ async function crashFlash() {
 }
 
 function localCrashFlash() {
-  playOneShot(`${PATH}/assets/audio/ear-ring-3s.ogg`, 0.25);
+  const ringing = playOneShot(`${PATH}/assets/audio/ear-ring-3s.ogg`, 0.125);
+  ringing.loop = true;
+  setTimeout(() => {
+    ringing.pause();
+    ringing.currentTime = 0;
+  }, 4500);
   document.getElementById("edited-whiteout")?.remove();
   const flash = document.createElement("div");
   flash.id = "edited-whiteout";
   document.body.appendChild(flash);
   requestAnimationFrame(() => flash.classList.add("active"));
-  setTimeout(() => flash.classList.add("fade"), 2850);
-  setTimeout(() => flash.remove(), 4250);
+  setTimeout(() => flash.classList.add("fade"), 5850);
+  setTimeout(() => flash.remove(), 7250);
 }
 
-function playOneShot(src, volume = 0.5) {
+function playOneShot(src, volume = 0.5, playbackRate = 1) {
   const audio = new Audio(src);
   audio.volume = volume;
+  audio.playbackRate = playbackRate;
   audio.play().catch(err => console.warn("Edited Campaign Tools audio playback failed:", err));
   return audio;
 }
