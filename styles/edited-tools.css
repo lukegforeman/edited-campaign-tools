@@ -12,13 +12,54 @@
   box-shadow: 0 3px 14px rgba(0,0,0,.55), inset 0 0 14px rgba(202,156,56,.08);
   font-family: Georgia, "Times New Roman", serif;
   pointer-events: auto;
-  cursor: help;
+  cursor: default;
   user-select: none;
   text-align: center;
 }
 #edited-legend-hud .edited-legend-label { font-size: 11px; letter-spacing: .28em; opacity: .85; }
 #edited-legend-hud .edited-legend-count { font-size: 28px; font-weight: 700; line-height: 1; margin: 3px 0; }
 #edited-legend-hud .edited-legend-pips { font-size: 12px; letter-spacing: .08em; color: #d9b34c; min-height: 14px; }
+.edited-legend-reference {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  width: 260px;
+  padding: 11px 13px 12px;
+  color: #f7edc6;
+  background: rgba(11, 9, 7, .97);
+  border: 1px solid rgba(220, 184, 78, .85);
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, .68);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(5px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
+  pointer-events: none;
+  text-align: left;
+}
+#edited-legend-hud:hover .edited-legend-reference {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.edited-legend-reference-title {
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(220, 184, 78, .38);
+  color: #e4bf57;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}
+.edited-legend-reference > div:not(.edited-legend-reference-title) {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 12px;
+  line-height: 1.25;
+}
+.edited-legend-reference b { color: #e4bf57; text-align: center; }
 #edited-whiteout {
   position: fixed; inset: 0; z-index: 999999; background: white; opacity: 0;
   pointer-events: none; transition: opacity 70ms linear;
