@@ -66,6 +66,24 @@
 }
 #edited-whiteout.active { opacity: 1; }
 #edited-whiteout.active.fade { opacity: 0; transition: opacity 1300ms ease-out; }
+#edited-red-alert {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  pointer-events: none;
+}
+#edited-red-alert.flashing {
+  background: rgba(185, 0, 0, .86);
+  animation: edited-red-alert-flash 600ms steps(1, end) infinite;
+}
+#edited-red-alert.blackout {
+  background: #000;
+  animation: none;
+}
+@keyframes edited-red-alert-flash {
+  0%, 49% { background: rgba(185, 0, 0, .86); }
+  50%, 100% { background: rgba(45, 0, 0, .46); }
+}
 #edited-legend-splash {
   position: fixed; left: 50%; top: 18%; transform: translate(-50%,-25%) scale(.72) rotate(-2deg);
   z-index: 999999; opacity: 0; pointer-events: none; text-align:center;
