@@ -3,6 +3,8 @@ const SOCKET = `module.${MODULE_ID}`;
 const PATH = `modules/${MODULE_ID}`;
 let battleAudio = null;
 let campAudio = null;
+let alertAudio = null;
+let alertTimers = [];
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, "legendCount", {
@@ -32,6 +34,7 @@ Hooks.once("ready", () => {
     setLegend,
     toggleLegendHUD,
     crashFlash,
+    redAlert,
     startSatynBattle,
     stopSatynBattle,
     rollLostRoads,
@@ -53,6 +56,7 @@ function handlePacket(payload) {
   if (!payload?.type) return;
   switch (payload.type) {
     case "crashFlash": return localCrashFlash();
+    case "redAlert": return localRedAlert();
     case "legendSting": return localLegendSting(payload.count);
     case "startSatynBattle": return localStartBattle();
     case "stopSatynBattle": return localStopBattle();
@@ -154,6 +158,49 @@ function localCrashFlash() {
   requestAnimationFrame(() => flash.classList.add("active"));
   setTimeout(() => flash.classList.add("fade"), 5850);
   setTimeout(() => flash.remove(), 7250);
+}
+
+function redAlert() {
+  if (!game.user.isGM) return ui.notifications.warn("Only the GM can trigger the red alert sequence.");
+  emitAll({type: "redAlert", nonce: foundry.utils.randomID()});
+}
+
+function clearLocalRedAlert() {
+  for (const timer of alertTimers) clearTimeout(timer);
+  alertTimers = [];
+  if (alertAudio) {
+    alertAudio.pause();
+    alertAudio.currentTime = 0;
+    alertAudio = null;
+  }
+  document.getElementById("edited-red-alert")?.remove();
+}
+
+function localRedAlert() {
+  clearLocalRedAlert();
+  alertAudio = playOneShot(`${PATH}/assets/audio/red-alert-3s.ogg`, 0.125);
+
+  const overlay = document.createElement("div");
+  overlay.id = "edited-red-alert";
+  overlay.className = "flashing";
+  document.body.appendChild(overlay);
+
+  alertTimers.push(setTimeout(() => {
+    if (alertAudio) {
+      alertAudio.pause();
+      alertAudio.currentTime = 0;
+      alertAudio = null;
+    }
+  }, 3000));
+
+  alertTimers.push(setTimeout(() => {
+    overlay.className = "blackout";
+  }, 5000));
+
+  alertTimers.push(setTimeout(() => {
+    overlay.remove();
+    alertTimers = [];
+  }, 10000));
 }
 
 function playOneShot(src, volume = 0.5, playbackRate = 1) {
