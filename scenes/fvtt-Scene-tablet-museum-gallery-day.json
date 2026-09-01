@@ -1,0 +1,29 @@
+{
+  "name": "Tablet Museum Gallery — Day",
+  "background": {
+    "src": "modules/edited-campaign-tools/assets/art/scenes/tablet-museum-gallery-day.webp"
+  },
+  "width": 3072,
+  "height": 2048,
+  "padding": 0,
+  "grid": {
+    "type": 1,
+    "size": 100,
+    "distance": 5,
+    "units": "ft",
+    "color": "#7f7667",
+    "alpha": 0.22
+  },
+  "tokenVision": false,
+  "globalLight": true,
+  "globalLightThreshold": null,
+  "fogExploration": false,
+  "navigation": false,
+  "navOrder": 20,
+  "flags": {
+    "edited-campaign-tools": {
+      "tabletMuseumScene": true,
+      "version": 1
+    }
+  }
+}

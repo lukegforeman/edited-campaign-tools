@@ -1,0 +1,29 @@
+{
+  "name": "Tablet Museum Gallery — Night Security",
+  "background": {
+    "src": "modules/edited-campaign-tools/assets/art/scenes/tablet-museum-gallery-night-lasers.webp"
+  },
+  "width": 3072,
+  "height": 2048,
+  "padding": 0,
+  "grid": {
+    "type": 1,
+    "size": 100,
+    "distance": 5,
+    "units": "ft",
+    "color": "#68758a",
+    "alpha": 0.2
+  },
+  "tokenVision": false,
+  "globalLight": true,
+  "globalLightThreshold": null,
+  "fogExploration": false,
+  "navigation": false,
+  "navOrder": 21,
+  "flags": {
+    "edited-campaign-tools": {
+      "tabletMuseumScene": true,
+      "version": 1
+    }
+  }
+}
