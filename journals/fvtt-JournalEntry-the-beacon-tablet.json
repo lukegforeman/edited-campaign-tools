@@ -1,0 +1,47 @@
+{
+  "name": "The Beacon Tablet — First Contact",
+  "ownership": {
+    "default": 1
+  },
+  "pages": [
+    {
+      "name": "The Artifact",
+      "type": "text",
+      "ownership": {
+        "default": -1
+      },
+      "text": {
+        "format": 1,
+        "content": "<h1>The Beacon Tablet</h1><blockquote>A newly translated object with two histories and one impossible word.</blockquote><p>The centerpiece of the new Museum of Natural History exhibit is a weathered limestone tablet from a coastal settlement in ancient Greece. Its surviving lines appear to describe preparations for an approaching fleet and the lighting of a warning beacon.</p><p>The tablet should be historically straightforward. It is not. Older notes, new scans, and different translations cannot agree on one critical word. Some researchers read it as <strong>BEACON</strong>. Others insist the same marks can only mean <strong>BECKON</strong>. Both groups have documentation that appears authentic.</p><p>Up close, the disputed line seems subtly deeper than the surrounding inscription. Looking away and back makes the spacing feel different, as though the stone cannot settle on which version it contains.</p>"
+      }
+    },
+    {
+      "name": "What You See When You Touch It",
+      "type": "text",
+      "ownership": {
+        "default": -1
+      },
+      "text": {
+        "format": 1,
+        "content": "<h1>The Touch</h1><p>The museum disappears beneath your hand. Cold stone becomes salt spray, smoke, wet rope, and a night sky split by fire.</p><h2>The First History</h2><p>A beacon ignites above an ancient coastal city. Bells answer it. Families run from the streets while defenders hurry toward the walls. Beyond the harbor, an invading fleet sees the warning flame and continues toward shore. The city has time to prepare—but not enough. Ships reach the coast. Gates break. Roofs burn. The last thing you hear is the beacon bell still ringing over the screams.</p><h2>The Second History</h2><p>The same beacon ignites, but the flame bends toward the sea like a finger curling inward. The approaching ships turn toward it despite shouted orders and desperate hands on their rudders. One hull strikes a hidden reef, then another. Wood splits. Bronze and bodies vanish into black water. By dawn, the city stands untouched while wreckage covers the rocks below.</p><h2>The Overlap</h2><p>Both histories happen at once. The city burns. The city is saved. The fleet reaches shore. The fleet drowns offshore. Neither memory feels imagined, and neither will yield to the other.</p><p>For one heartbeat, the inscription is no longer Greek. A single word hangs in your mind:</p><p style=\"text-align:center;font-size:1.5em\"><strong>BEACON</strong></p><p style=\"text-align:center\">The letters shudder.</p><p style=\"text-align:center;font-size:1.5em\"><strong>BECKON</strong></p><p>Then you are back beneath museum lights with your hand against cold stone. You saw no face, no hand, and no explanation—only two complete realities occupying the same object.</p>"
+      }
+    },
+    {
+      "name": "What the Party Can Conclude",
+      "type": "text",
+      "ownership": {
+        "default": -1
+      },
+      "text": {
+        "format": 1,
+        "content": "<h1>What This Means</h1><ul><li>The tablet is not merely recording conflicting accounts. It physically contains evidence of two mutually exclusive histories.</li><li>Changing <strong>BEACON</strong> to <strong>BECKON</strong> redirected the invading fleet onto hidden rocks.</li><li>The change saved the coastal city's civilians from invasion, but condemned the people aboard the ships.</li><li>The contradiction has become stronger as historians translate, photograph, debate, and publicly remember the tablet.</li><li>The object now behaves like a fixed point where the discarded history and the surviving history touch.</li><li>Nothing in this first vision identifies who made the change or why.</li></ul>"
+      }
+    }
+  ],
+  "flags": {
+    "edited-campaign-tools": {
+      "tabletFragmentJournal": true,
+      "version": 1
+    }
+  }
+}
