@@ -1,6 +1,11 @@
 name: Build Foundry release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - module.json
+      - .github/workflows/build-release.yml
   release:
     types: [published]
   workflow_dispatch:
@@ -14,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: foundry-release-${{ github.event.release.tag_name || inputs.release_tag }}
+  group: foundry-release-${{ github.event.release.tag_name || inputs.release_tag || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -22,7 +27,7 @@ jobs:
     if: github.event_name != 'release' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+      REQUESTED_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
       - name: Check out the current module source
@@ -35,6 +40,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ -n "${REQUESTED_TAG:-}" ]]; then
+            RELEASE_TAG="$REQUESTED_TAG"
+          else
+            RELEASE_TAG="v$(jq -r '.version' module.json)"
+          fi
+
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "release_tag must use vMAJOR.MINOR.PATCH, for example v1.1.5"
             exit 1
@@ -54,6 +65,7 @@ jobs:
             '.version == $version and .download == $download' module.json > /dev/null
 
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
           echo "ASSET_NAME=$ASSET_NAME" >> "$GITHUB_ENV"
           echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> "$GITHUB_ENV"
 
