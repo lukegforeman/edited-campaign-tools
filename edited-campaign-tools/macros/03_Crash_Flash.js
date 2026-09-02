@@ -1,1 +1,0 @@
-EditedCampaignTools.crashFlash();

@@ -3,43 +3,92 @@ name: Build Foundry release
 on:
   release:
     types: [published]
-
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Existing GitHub release tag, such as v1.1.1"
+        description: "Version tag to publish or rebuild, such as v1.1.5"
         required: true
         type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: foundry-release-${{ github.event.release.tag_name || inputs.release_tag }}
+  cancel-in-progress: false
+
 jobs:
   package:
+    if: github.event_name != 'release' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
-      - name: Check out repository
+      - name: Check out the current module source
         uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
 
-      - name: Validate module manifest
+      - name: Synchronize and validate the manifest
+        shell: bash
         run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "release_tag must use vMAJOR.MINOR.PATCH, for example v1.1.5"
+            exit 1
+          fi
+
+          VERSION="${RELEASE_TAG#v}"
+          ASSET_NAME="Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip"
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${ASSET_NAME}"
+
           test -f module.json
           jq empty module.json
-          echo "Found module.json at repository root."
+          jq --arg version "$VERSION" --arg download "$DOWNLOAD_URL" \
+            '.version = $version | .download = $download' module.json > module.json.tmp
+          mv module.json.tmp module.json
 
-      - name: Confirm release exists
+          jq -e --arg version "$VERSION" --arg download "$DOWNLOAD_URL" \
+            '.version == $version and .download == $download' module.json > /dev/null
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ASSET_NAME=$ASSET_NAME" >> "$GITHUB_ENV"
+          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> "$GITHUB_ENV"
+
+      - name: Commit the synchronized manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- module.json; then
+            echo "module.json already matches ${RELEASE_TAG}."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add module.json
+          git commit -m "Release ${RELEASE_TAG}"
+          git push origin HEAD:main
+
+      - name: Create or locate the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release view "$RELEASE_TAG" > /dev/null
-          echo "Found GitHub release $RELEASE_TAG."
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            echo "Found existing release ${RELEASE_TAG}."
+          else
+            gh release create "$RELEASE_TAG" --target main --title "$RELEASE_TAG" --notes "Automated Foundry module release ${RELEASE_TAG}."
+          fi
 
-      - name: Build module ZIP
+      - name: Build the Foundry module ZIP
+        shell: bash
         run: |
+          set -euo pipefail
+          rm -rf build
           mkdir -p build/edited-campaign-tools
           rsync -a \
             --exclude '.git' \
@@ -49,18 +98,27 @@ jobs:
             ./ build/edited-campaign-tools/
 
           test -f build/edited-campaign-tools/module.json
+          (cd build && zip -qr "$ASSET_NAME" edited-campaign-tools)
 
-          cd build
-          zip -r "Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip" edited-campaign-tools
+      - name: Validate the release ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_PATH="build/${ASSET_NAME}"
+          zipinfo -1 "$ZIP_PATH" | grep -qx 'edited-campaign-tools/module.json'
+          if zipinfo -1 "$ZIP_PATH" | grep -q '^edited-campaign-tools/edited-campaign-tools/'; then
+            echo "Nested duplicate module directory detected."
+            exit 1
+          fi
+          unzip -p "$ZIP_PATH" edited-campaign-tools/module.json | \
+            jq -e --arg version "$VERSION" --arg download "$DOWNLOAD_URL" \
+              '.version == $version and .download == $download' > /dev/null
 
-      - name: Attach ZIP to release
+      - name: Attach the ZIP to the release
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release upload "$RELEASE_TAG" \
-            "build/Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip" \
-            --clobber
-
-      - name: Show completed asset
-        run: |
-          echo "Attached Edited_Campaign_Tools_Module_${RELEASE_TAG}.zip to release ${RELEASE_TAG}."
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" "build/${ASSET_NAME}" --clobber
+          echo "Published ${ASSET_NAME} for ${RELEASE_TAG}."

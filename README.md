@@ -1,24 +1,32 @@
-# Edited Campaign Tools 1.0.1
+# Edited Campaign Tools
 
-Audio refresh in 1.0.1:
+Foundry VTT module for **The Margin**, currently compatible with Foundry **14.365** and D&D5e **5.3.3**.
 
-- Replaced the camp ambience with a seamless 60-second outdoor night loop built around natural cricket choruses, woodland air, and irregular campfire crackle.
-- Replaced the Legend sting with a three-call monster-truck-announcer cadence: “LEGEND! LEGEND! LEGEND!”
+## Included
 
-Complete Session 1 module for Foundry VTT **14.365** and D&D5e **5.3.3**.
+- Campaign actors, tokens, portraits, scenes, journals, macros, and audio cues
+- Shared Legend HUD with a hover-only Legend Shop reference
+- Synchronized crash flash, red-alert, battle-audio, and ambience effects
+- Edward Dravin's Olympus/Hades sheet and token toggle
+- Museum gallery, roof, visitors, guards, and Beacon Tablet journal assets
+- Lost Roads travel tools and Session 1 setup utilities
 
-After enabling the module, run this once as GM from a Script Macro:
+## Foundry installation
 
-`await EditedSession1.installSession1();`
+Install or update the module using:
 
-It installs or refreshes:
+`https://raw.githubusercontent.com/lukegforeman/edited-campaign-tools/main/module.json`
 
-- 21 campaign Actors in `Edited — PCs`, `Edited — Monsters`, and `Edited — NPCs`.
-- `Bus Opening`, `Fates' Open-Air Library`, and `The Margin` scenes.
-- All 17 campaign macros in an `Edited — Macros` folder.
-- Six populated campaign journals, the Lost Roads d6 table, and a Session 1 audio playlist.
-- The Fates encounter's initial tokens and hidden reinforcements.
+Updating the module does not delete world-created scenes, actors, journals, or tokens. Do not rerun the full Session 1 installer merely to update module code.
 
-Edward Dravin's normal D&D5e character sheet receives an Olympus/Hades panel at the top. The button switches his prepared spell loadout, portrait, prototype token, and linked placed tokens without restoring spent spell slots or changing any other character data.
+## Creating a release
 
-The installer is rerunnable. Documents made by this module are refreshed; unrelated documents with the same name are left untouched.
+Open **Actions → Build Foundry release → Run workflow**, enter a semantic version tag such as `v1.1.5`, and run it. The workflow:
+
+1. Updates the root manifest version and download URL.
+2. Commits that manifest change to `main` when needed.
+3. Creates the GitHub release if it does not already exist.
+4. Packages the module with exactly one `edited-campaign-tools/` directory.
+5. Validates the archive and uploads it to the release.
+
+The obsolete nested source copy was removed. `module.json` at the repository root is the only live manifest.
