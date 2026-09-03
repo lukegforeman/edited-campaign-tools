@@ -7,7 +7,8 @@ const EXPOSED_BACKGROUND = `${MUSEUM_ROOT}/assets/art/scenes/tablet-museum-galle
 const CLAW_EMPTY = `${MUSEUM_ROOT}/assets/art/tiles/museum-claw/claw-empty.webp`;
 const CLAW_GLASS = `${MUSEUM_ROOT}/assets/art/tiles/museum-claw/claw-with-glass.webp`;
 const BEEP_TRACK = `${MUSEUM_ROOT}/assets/audio/museum-beeps-60s.ogg`;
-const MUSEUM_VERSION = 1;
+const MUSEUM_LEVEL_ID = "museumGalleryLvl";
+const MUSEUM_VERSION = 2;
 
 let museumBeepAudio = null;
 let clawBusy = false;
@@ -44,6 +45,96 @@ Hooks.once("ready", () => {
 
 function museumFlags(kind) {
   return {[MUSEUM_MODULE_ID]: {museumHeist: true, kind, version: MUSEUM_VERSION}};
+}
+
+function museumLevelData(backgroundSrc = COVERED_BACKGROUND, id = MUSEUM_LEVEL_ID) {
+  return {
+    _id: id,
+    name: "Gallery Floor",
+    background: {
+      color: "#000000",
+      src: backgroundSrc,
+      tint: "#ffffff",
+      alphaThreshold: 0.75
+    },
+    elevation: {bottom: 0, top: 20},
+    foreground: {src: null, tint: "#ffffff", alphaThreshold: 0.75},
+    fog: {src: null},
+    textures: {
+      anchorX: 0.5,
+      anchorY: 0.5,
+      offsetX: 0,
+      offsetY: 0,
+      fit: "fill",
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0
+    },
+    visibility: {levels: []},
+    sort: 0,
+    flags: museumFlags("Level")
+  };
+}
+
+function museumSceneData(folderId) {
+  return {
+    name: MUSEUM_SCENE_NAME,
+    folder: folderId,
+    width: 3072,
+    height: 2048,
+    padding: 0,
+    shiftX: 0,
+    shiftY: 0,
+    initial: {x: 1536, y: 1024, scale: 0.5},
+    grid: {
+      type: 1,
+      size: 100,
+      distance: 5,
+      units: "ft",
+      color: "#68758a",
+      alpha: 0.2,
+      style: "solidLines",
+      thickness: 1
+    },
+    tokenVision: false,
+    navigation: false,
+    navName: "",
+    navOrder: 22,
+    environment: {
+      globalLight: {enabled: true, bright: false},
+      darknessLevel: 0,
+      darknessLock: false,
+      cycle: false
+    },
+    fog: {mode: 0, reset: null, colors: {explored: null, unexplored: null}},
+    flags: museumFlags("Scene")
+  };
+}
+
+function getMuseumLevel(scene) {
+  if (!scene) return null;
+  return scene.levels?.get?.(MUSEUM_LEVEL_ID)
+    ?? scene.initialLevel
+    ?? scene.firstLevel
+    ?? scene.levels?.find?.(level => level.getFlag?.(MUSEUM_MODULE_ID, "museumHeist"))
+    ?? null;
+}
+
+async function ensureMuseumLevel(scene) {
+  let level = getMuseumLevel(scene);
+  if (!level) {
+    [level] = await scene.createEmbeddedDocuments("Level", [museumLevelData()]);
+  } else {
+    const currentSrc = level.background?.src;
+    const preservedSrc = [COVERED_BACKGROUND, EXPOSED_BACKGROUND].includes(currentSrc)
+      ? currentSrc
+      : COVERED_BACKGROUND;
+    const update = museumLevelData(preservedSrc, level.id);
+    delete update._id;
+    await level.update(update);
+  }
+  if (scene._source?.initialLevel !== level.id) await scene.update({initialLevel: level.id});
+  return level;
 }
 
 function sleep(milliseconds) {
@@ -219,7 +310,9 @@ async function toggleMuseumClaw() {
   clawBusy = true;
   try {
     await Promise.all([CLAW_EMPTY, CLAW_GLASS, COVERED_BACKGROUND, EXPOSED_BACKGROUND].map(preloadImage));
-    const currentBackground = scene.background?.src ?? "";
+    const level = getMuseumLevel(scene);
+    if (!level) return ui.notifications.error("This Scene has no Foundry 14 Level. Run the museum installer again to repair it.");
+    const currentBackground = level.background?.src ?? "";
     const raisedSetting = Boolean(game.settings.get(MUSEUM_MODULE_ID, "museumGlassRaised"));
     const currentlyRaised = currentBackground === EXPOSED_BACKGROUND || raisedSetting;
     const direction = currentlyRaised ? "lower" : "lift";
@@ -227,7 +320,7 @@ async function toggleMuseumClaw() {
 
     await sleep(1600);
     const nextRaised = !currentlyRaised;
-    await scene.update({"background.src": nextRaised ? EXPOSED_BACKGROUND : COVERED_BACKGROUND});
+    await level.update({"background.src": nextRaised ? EXPOSED_BACKGROUND : COVERED_BACKGROUND});
     await game.settings.set(MUSEUM_MODULE_ID, "museumGlassRaised", nextRaised);
     await sleep(1800);
     ui.notifications.info(nextRaised ? "The claw raised the tablet's glass cover." : "The claw replaced the tablet's glass cover.");
@@ -273,24 +366,10 @@ async function installMuseumHeist() {
     ui.notifications.warn(`A custom Scene named “${MUSEUM_SCENE_NAME}” already exists, so it was left untouched.`);
     scene = sameName;
   } else {
-    const data = {
-      name: MUSEUM_SCENE_NAME,
-      folder: sceneFolder.id,
-      background: {src: COVERED_BACKGROUND},
-      width: 3072,
-      height: 2048,
-      padding: 0,
-      grid: {type: 1, size: 100, distance: 5, units: "ft", color: "#68758a", alpha: 0.2},
-      tokenVision: false,
-      globalLight: true,
-      globalLightThreshold: null,
-      fogExploration: false,
-      navigation: false,
-      navOrder: 22,
-      flags: museumFlags("Scene")
-    };
+    const data = museumSceneData(sceneFolder.id);
     if (scene) await scene.update(data);
-    else scene = await Scene.create(data);
+    else scene = await Scene.create({...data, levels: [museumLevelData()], initialLevel: MUSEUM_LEVEL_ID});
+    await ensureMuseumLevel(scene);
   }
 
   const macroResults = [];
@@ -298,7 +377,7 @@ async function installMuseumHeist() {
   macroResults.push(await upsertMuseumMacro(macroFolder, "Museum Countdown — Advance 6 Seconds", "await EditedMuseumHeist.countdown();"));
   macroResults.push(await upsertMuseumMacro(macroFolder, "Museum Countdown — Reset", "await EditedMuseumHeist.resetCountdown();"));
   macroResults.push(await upsertMuseumMacro(macroFolder, "Refresh Monster Sheets — No PCs", "await EditedCampaignActors.refreshMonsterActors();"));
-  await game.settings.set(MUSEUM_MODULE_ID, "museumGlassRaised", scene.background?.src === EXPOSED_BACKGROUND);
+  await game.settings.set(MUSEUM_MODULE_ID, "museumGlassRaised", getMuseumLevel(scene)?.background?.src === EXPOSED_BACKGROUND);
   ui.notifications.info("Museum heist Scene and controls are ready. Player-character sheets were not touched.");
   return {scene, macros: macroResults};
 }

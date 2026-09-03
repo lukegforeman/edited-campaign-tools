@@ -9,6 +9,8 @@ Foundry VTT module for **The Margin**, currently compatible with Foundry **14.36
 - Synchronized crash flash, red-alert, battle-audio, and ambience effects
 - Edward Dravin's Olympus/Hades sheet and token toggle
 - Museum gallery, roof, visitors, guards, and Beacon Tablet journal assets
+- Reversible civilian-to-monster token transformations for every campaign monster
+- Mixed, sheetless bystander crowd generator for the Token layer
 - Lost Roads travel tools and Session 1 setup utilities
 
 ## Foundry installation
@@ -31,14 +33,15 @@ Bumping the root `module.json` version on `main` automatically runs **Build Foun
 
 The obsolete nested source copy was removed. `module.json` at the repository root is the only live manifest.
 
-## Museum heist controls (v1.1.5)
+## Museum heist and token controls (v1.1.6)
 
-After updating to v1.1.5 and reloading the world, run this once as the GM from a Script Macro or the browser console:
+After updating to v1.1.6 and reloading the world, run these once as the GM from Script Macros or the browser console:
 
 ```javascript
 await EditedMuseumHeist.install();
+await EditedTokenTools.install();
 ```
 
-This adds the spotlighted nighttime tablet gallery, reversible glass-lifting claw, synchronized `00:18` countdown, one-minute quiet beep track, and a monster-only sheet refresh control. See `MUSEUM_HEIST_v1.1.5.md` for the controls.
+This repairs or creates the Foundry v14 spotlighted nighttime tablet gallery, adds the reversible glass-lifting claw, synchronized `00:18` countdown, one-minute quiet beep track, eleven monster transformation controls, and two crowd-builder controls. See `MUSEUM_HEIST_v1.1.6.md` for the controls.
 
-Existing player-character Actors are preserved. The museum installer and monster refresh do not modify PC sheets.
+Run **Refresh Monster Sheets — No PCs** once to create or refresh only the module's named monster NPCs and their rollable D&D5e activities. Existing player-character Actors are preserved and are never modified by the monster refresh.

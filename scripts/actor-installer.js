@@ -195,7 +195,7 @@ function monsterActors() {
   return [
     npc({
       name: "Gordon (Edited Gorgon)",
-      img: art("gordon/gordon-profile.webp"), token: art("gordon/gordon-token.webp"),
+      img: art("gordon/gordon-profile.webp"), token: art("gordon/gordon-token-normal.webp"),
       ac: 13, hp: 30, cr: 1, speed: 30,
       abilities: {str: 15, dex: 12, con: 16, int: 7, wis: 13, cha: 9}, saves: ["con", "wis"],
       biography: paragraph("An inky, letter-shifted gorgon reconstructed from the canonical Monster Stat Blocks tab."),
@@ -207,7 +207,7 @@ function monsterActors() {
     }),
     npc({
       name: "Harps (Edited Harpy)",
-      img: art("harps/harps-profile.webp"), token: art("harps/harps-token.webp"),
+      img: art("harps/harps-profile.webp"), token: art("harps/harps-token-normal.webp"),
       ac: 14, hp: 36, cr: 2, speed: 25,
       abilities: {str: 12, dex: 16, con: 13, int: 8, wis: 13, cha: 14}, saves: ["dex", "wis"],
       biography: paragraph("A grounded living harp-creature: clawed feet form the harp's base, while its neck and head shape the harp's crown and the stringed frame only suggests wings."),
@@ -219,7 +219,7 @@ function monsterActors() {
     }),
     npc({
       name: "Satyn (Edited Satyr)",
-      img: art("satyn/satyn-profile.webp"), token: art("satyn/satyn-token.webp"),
+      img: art("satyn/satyn-profile.webp"), token: art("satyn/satyn-token-normal.webp"),
       ac: 15, hp: 52, cr: 3, speed: 35,
       abilities: {str: 16, dex: 14, con: 15, int: 12, wis: 14, cha: 16}, saves: ["wis", "cha"],
       biography: paragraph("A charming, desire-twisting letter-shifted monster with the campaign's black-ink influence."),
@@ -232,7 +232,7 @@ function monsterActors() {
     }),
     npc({
       name: "Young Satyn Minion",
-      img: art("young-satyn/young-satyn-profile.webp"), token: art("young-satyn/young-satyn-token.webp"),
+      img: art("young-satyn/young-satyn-profile.webp"), token: art("young-satyn/young-satyn-token-normal.webp"),
       ac: 12, hp: 9, cr: 0.25, speed: 35, creatureSize: "sm",
       abilities: {str: 12, dex: 14, con: 12, int: 8, wis: 11, cha: 10}, saves: [],
       biography: paragraph("A smaller, half-formed Satyn whose horns and confidence have not fully grown in. It darts at isolated targets but lacks the elder Satyn's charm magic and multiattack."),
@@ -243,7 +243,7 @@ function monsterActors() {
     }),
     npc({
       name: "Ink Blot Minion",
-      img: art("ink-blot/ink-blot-profile.webp"), token: art("ink-blot/ink-blot-token.webp"),
+      img: art("ink-blot/ink-blot-profile.webp"), token: art("ink-blot/ink-blot-token-normal.webp"),
       ac: 10, hp: 5, cr: 0, speed: 20, climb: 10, creatureSize: "tiny", tokenScale: 0.78,
       abilities: {str: 6, dex: 10, con: 10, int: 3, wis: 8, cha: 3}, saves: [],
       traits: {
@@ -258,7 +258,7 @@ function monsterActors() {
     }),
     npc({
       name: "Hydrant (Edited Hydra)",
-      img: art("hydrant/hydrant-profile.webp"), token: art("hydrant/hydrant-token.webp"),
+      img: art("hydrant/hydrant-profile.webp"), token: art("hydrant/hydrant-token-normal.webp"),
       ac: 16, hp: 88, cr: 5, speed: 25, size: 2,
       abilities: {str: 18, dex: 12, con: 18, int: 6, wis: 11, cha: 8}, saves: ["con", "dex"],
       biography: paragraph("A multi-valved inky hydrant beast reconstructed from the canonical Monster Stat Blocks tab."),
@@ -270,7 +270,7 @@ function monsterActors() {
     }),
     npc({
       name: "Medulas (Edited Medusa)",
-      img: art("medulas/medulas-profile.webp"), token: art("medulas/medulas-token.webp"),
+      img: art("medulas/medulas-profile.webp"), token: art("medulas/medulas-token-normal.webp"),
       ac: 15, hp: 68, cr: 4, speed: 0, fly: 30,
       abilities: {str: 10, dex: 14, con: 15, int: 16, wis: 16, cha: 12}, saves: ["int", "wis"],
       biography: paragraph("A hovering, brain-and-tendril letter-shifted monster infused with living editorial ink."),
@@ -282,7 +282,7 @@ function monsterActors() {
     }),
     npc({
       name: "Minowtaur (Edited Minotaur)",
-      img: art("minowtaur/minowtaur-profile.webp"), token: art("minowtaur/minowtaur-token.webp"),
+      img: art("minowtaur/minowtaur-profile.webp"), token: art("minowtaur/minowtaur-token-normal.webp"),
       ac: 16, hp: 112, cr: 6, speed: 35, swim: 40, size: 2,
       abilities: {str: 19, dex: 12, con: 18, int: 8, wis: 12, cha: 9}, saves: ["str", "con"],
       biography: paragraph("An amphibious, ink-touched minotaur with human-shaped scaly legs, equally usable on land or underwater."),
@@ -299,7 +299,7 @@ function monsterActors() {
     }),
     npc({
       name: "The Redactor",
-      img: art("redactor/redactor-profile.webp"), token: art("redactor/redactor-token.webp"),
+      img: art("redactor/redactor-profile.webp"), token: art("redactor/redactor-token-normal.webp"),
       ac: 18, hp: 185, cr: 10, speed: 40, climb: 40, size: 2, legact: 3,
       abilities: {str: 18, dex: 20, con: 18, int: 16, wis: 16, cha: 15}, saves: ["dex", "con", "wis"],
       traits: {
@@ -324,7 +324,7 @@ function monsterActors() {
     }),
     npc({
       name: "The Scribe",
-      img: art("scribe/scribe-profile.webp"), token: art("scribe/scribe-token.webp"),
+      img: art("scribe/scribe-profile.webp"), token: art("scribe/scribe-token-normal.webp"),
       ac: 19, hp: 250, cr: 13, speed: 30, fly: 30, size: 2, legact: 3, legres: 3, lair: true,
       abilities: {str: 14, dex: 16, con: 18, int: 20, wis: 20, cha: 22}, saves: ["int", "wis", "cha"],
       traits: {
@@ -376,7 +376,7 @@ function monsterActors() {
     }),
     npc({
       name: "The Final Draft Pen",
-      img: art("the-pen/the-pen-token.webp"), token: art("the-pen/the-pen-token.webp"),
+      img: art("the-pen/the-pen-token.webp"), token: art("the-pen/the-pen-token-normal.webp"),
       ac: 19, hp: 3, cr: 13, speed: 0, fly: 30, size: 2,
       abilities: {str: 1, dex: 18, con: 20, int: 20, wis: 20, cha: 20}, saves: [],
       biography: paragraph("Encounter object, not a conventional creature. Its 3 hit points represent Integrity, not ordinary damage. Track sentence completion as Progress 0/5."),

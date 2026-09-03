@@ -1,30 +1,146 @@
 {
+  "_id": "museumNightSpot1",
   "name": "Tablet Museum Gallery — Night Spotlight",
-  "background": {
-    "src": "modules/edited-campaign-tools/assets/art/scenes/tablet-museum-gallery-night-spotlight-covered.webp"
-  },
+  "active": false,
+  "navigation": false,
+  "navName": "",
+  "navOrder": 22,
+  "thumb": "modules/edited-campaign-tools/assets/art/scenes/tablet-museum-gallery-night-spotlight-covered.webp",
   "width": 3072,
   "height": 2048,
   "padding": 0,
+  "shiftX": 0,
+  "shiftY": 0,
+  "initial": {
+    "x": 1536,
+    "y": 1024,
+    "scale": 0.5
+  },
   "grid": {
     "type": 1,
     "size": 100,
     "distance": 5,
     "units": "ft",
     "color": "#68758a",
-    "alpha": 0.2
+    "alpha": 0.2,
+    "style": "solidLines",
+    "thickness": 1
   },
   "tokenVision": false,
-  "globalLight": true,
-  "globalLightThreshold": null,
-  "fogExploration": false,
-  "navigation": false,
-  "navOrder": 22,
+  "drawings": [],
+  "tokens": [],
+  "lights": [],
+  "notes": [],
+  "sounds": [],
+  "tiles": [],
+  "walls": [],
+  "regions": [],
+  "playlist": null,
+  "playlistSound": null,
+  "journal": null,
+  "journalEntryPage": null,
+  "weather": "",
+  "ownership": {
+    "default": 0
+  },
+  "environment": {
+    "globalLight": {
+      "luminosity": 0,
+      "enabled": true,
+      "darkness": {
+        "max": 1,
+        "min": 0
+      },
+      "alpha": 0.5,
+      "bright": false,
+      "color": null,
+      "coloration": 1,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0
+    },
+    "darknessLevel": 0,
+    "darknessLock": false,
+    "cycle": false,
+    "base": {
+      "hue": 0,
+      "intensity": 0,
+      "luminosity": 0,
+      "saturation": 0,
+      "shadows": 0
+    },
+    "dark": {
+      "hue": 0.7138888888888889,
+      "intensity": 0,
+      "luminosity": -0.25,
+      "saturation": 0,
+      "shadows": 0
+    }
+  },
+  "fog": {
+    "reset": null,
+    "colors": {
+      "explored": null,
+      "unexplored": null
+    },
+    "mode": 0
+  },
+  "levels": [
+    {
+      "_id": "museumGalleryLvl",
+      "name": "Gallery Floor",
+      "background": {
+        "color": "#000000",
+        "src": "modules/edited-campaign-tools/assets/art/scenes/tablet-museum-gallery-night-spotlight-covered.webp",
+        "tint": "#ffffff",
+        "alphaThreshold": 0.75
+      },
+      "elevation": {
+        "bottom": 0,
+        "top": 20
+      },
+      "foreground": {
+        "src": null,
+        "tint": "#ffffff",
+        "alphaThreshold": 0.75
+      },
+      "fog": {
+        "src": null
+      },
+      "textures": {
+        "anchorX": 0.5,
+        "anchorY": 0.5,
+        "offsetX": 0,
+        "offsetY": 0,
+        "fit": "fill",
+        "scaleX": 1,
+        "scaleY": 1,
+        "rotation": 0
+      },
+      "visibility": {
+        "levels": []
+      },
+      "sort": 0,
+      "flags": {
+        "edited-campaign-tools": {
+          "museumHeist": true,
+          "kind": "Level",
+          "version": 2
+        }
+      }
+    }
+  ],
+  "initialLevel": "museumGalleryLvl",
+  "transition": {
+    "type": null,
+    "duration": 1500,
+    "activeOnly": false
+  },
   "flags": {
     "edited-campaign-tools": {
       "museumHeist": true,
       "kind": "Scene",
-      "version": 1
+      "version": 2
     }
   }
 }
