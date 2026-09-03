@@ -36,6 +36,95 @@ function noteItem(name, description, img = "icons/svg/book.svg") {
   return feature(name, description, {img, activation: "special"});
 }
 
+function activityBase(type, {activation = "action", condition = "", range = null, target = "creature", template = null} = {}) {
+  return {
+    _id: foundry.utils.randomID(),
+    type,
+    activation: {type: activation === "special" ? "" : activation, value: activation === "special" ? null : 1, condition, override: false},
+    consumption: {targets: [], scaling: {allowed: false, max: ""}, spellSlot: false},
+    description: {chatFlavor: ""},
+    duration: {concentration: false, value: "", units: "", special: "", override: false},
+    effects: [],
+    range: {value: range === null ? "" : String(range), units: range === null ? "" : "ft", special: "", override: range !== null},
+    target: {
+      template: {
+        count: "",
+        contiguous: false,
+        type: template?.type ?? "",
+        size: template?.size === undefined ? "" : String(template.size),
+        width: template?.width === undefined ? "" : String(template.width),
+        height: "",
+        units: template ? "ft" : ""
+      },
+      affects: {count: target ? "1" : "", type: target, choice: false, special: ""},
+      prompt: Boolean(target),
+      override: Boolean(target || template)
+    },
+    uses: {spent: 0, max: "", recovery: []},
+    sort: 0
+  };
+}
+
+function damagePart(formula, type) {
+  return {
+    number: null,
+    denomination: null,
+    bonus: "",
+    types: type ? [type] : [],
+    custom: {enabled: true, formula},
+    scaling: {mode: "", number: 1, formula: ""}
+  };
+}
+
+function attackActivity({toHit, damage = [], range = 5, attackType = "melee", activation = "action"}) {
+  const activity = activityBase("attack", {activation, range});
+  activity.attack = {
+    ability: "none",
+    bonus: String(toHit),
+    critical: {threshold: null},
+    flat: true,
+    type: {value: attackType, classification: attackType === "spell" ? "spell" : "weapon"}
+  };
+  if (attackType === "spell") activity.attack.type.value = range > 5 ? "ranged" : "melee";
+  activity.damage = {
+    critical: {bonus: ""},
+    includeBase: false,
+    parts: damage.map(([formula, type]) => damagePart(formula, type))
+  };
+  return activity;
+}
+
+function saveActivity({ability, dc, damage = [], onSave = "none", range = null, template = null, activation = "action", target = "creature"}) {
+  const activity = activityBase("save", {activation, range, target, template});
+  activity.damage = {onSave, parts: damage.map(([formula, type]) => damagePart(formula, type))};
+  activity.save = {ability: [ability], dc: {calculation: "", formula: String(dc)}};
+  return activity;
+}
+
+function utilityActivity({activation = "action", condition = "", formula = ""} = {}) {
+  const activity = activityBase("utility", {activation, condition, target: ""});
+  activity.roll = {formula, name: "", prompt: false, visible: Boolean(formula)};
+  return activity;
+}
+
+function actionFeature(name, description, activities, options = {}) {
+  const item = feature(name, description, options);
+  item.system.activities = Object.fromEntries(activities.map(activity => [activity._id, activity]));
+  return item;
+}
+
+function attackFeature(name, description, config, options = {}) {
+  return actionFeature(name, description, [attackActivity(config)], options);
+}
+
+function saveFeature(name, description, config, options = {}) {
+  return actionFeature(name, description, [saveActivity(config)], options);
+}
+
+function utilityFeature(name, description, config = {}, options = {}) {
+  return actionFeature(name, description, [utilityActivity(config)], options);
+}
+
 function npcSystem({ac, hp, cr, speed = 30, fly = 0, swim = 0, climb = 0, abilities, saves = [], biography = "", legact = 0, legres = 0, lair = false}) {
   const abilityData = {};
   for (const key of ["str", "dex", "con", "int", "wis", "cha"]) {
@@ -74,10 +163,10 @@ function npcSystem({ac, hp, cr, speed = 30, fly = 0, swim = 0, climb = 0, abilit
   };
 }
 
-function npc({name, img, token, ac, hp, cr, speed, fly, swim, climb, abilities, saves, biography, items, size = 1, legact = 0, legres = 0, lair = false, traits = {}, disposition = CONST.TOKEN_DISPOSITIONS.HOSTILE, actorLink = false}) {
+function npc({name, img, token, ac, hp, cr, speed, fly, swim, climb, abilities, saves, biography, items, size = 1, creatureSize = null, tokenScale = 1, legact = 0, legres = 0, lair = false, traits = {}, disposition = CONST.TOKEN_DISPOSITIONS.HOSTILE, actorLink = false}) {
   const system = npcSystem({ac, hp, cr, speed, fly, swim, climb, abilities, saves, biography, legact, legres, lair});
   system.traits = foundry.utils.mergeObject(system.traits, traits, {inplace: false});
-  if (size >= 2) system.traits.size = "lg";
+  system.traits.size = creatureSize ?? (size >= 2 ? "lg" : "med");
   return {
     name,
     type: "npc",
@@ -85,7 +174,7 @@ function npc({name, img, token, ac, hp, cr, speed, fly, swim, climb, abilities, 
     system,
     prototypeToken: {
       name,
-      texture: {src: token, scaleX: 1, scaleY: 1},
+      texture: {src: token, scaleX: tokenScale, scaleY: tokenScale},
       width: size,
       height: size,
       disposition,
@@ -111,9 +200,9 @@ function monsterActors() {
       abilities: {str: 15, dex: 12, con: 16, int: 7, wis: 13, cha: 9}, saves: ["con", "wis"],
       biography: paragraph("An inky, letter-shifted gorgon reconstructed from the canonical Monster Stat Blocks tab."),
       items: [
-        feature("Multiattack", paragraph("Gordon makes its available melee attacks.")),
-        feature("Headbutt", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+4", "+4 to hit")}. Hit: ${roll("1d8+2", "bludgeoning damage")}.`)),
-        feature("Editorial Glare (Recharge 5–6)", paragraph(`One creature Gordon can see within 30 feet must succeed on a <strong>DC 13 Wisdom save</strong>. On a failure, its speed becomes 0 and it cannot take reactions until the end of its next turn.`))
+        utilityFeature("Multiattack", paragraph("Gordon makes its available melee attacks.")),
+        attackFeature("Headbutt", paragraph(`<strong>Melee Weapon Attack:</strong> +4 to hit. Hit: 1d8+2 bludgeoning damage.`), {toHit: 4, damage: [["1d8+2", "bludgeoning"]]}),
+        saveFeature("Editorial Glare (Recharge 5–6)", paragraph(`One creature Gordon can see within 30 feet must succeed on a <strong>DC 13 Wisdom save</strong>. On a failure, its speed becomes 0 and it cannot take reactions until the end of its next turn.`), {ability: "wis", dc: 13, range: 30})
       ]
     }),
     npc({
@@ -123,9 +212,9 @@ function monsterActors() {
       abilities: {str: 12, dex: 16, con: 13, int: 8, wis: 13, cha: 14}, saves: ["dex", "wis"],
       biography: paragraph("A grounded living harp-creature: clawed feet form the harp's base, while its neck and head shape the harp's crown and the stringed frame only suggests wings."),
       items: [
-        feature("Talons", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+5", "+5 to hit")}. Hit: ${roll("1d6+3", "slashing damage")}.`)),
-        feature("Discordant Song", paragraph(`Creatures in a 15-foot radius must make a <strong>DC 13 Wisdom save</strong>. On a failure, a creature has disadvantage on its next attack and cannot use Legend until then.`)),
-        feature("Clawfoot Scuttle", paragraph("Harps is a grounded living floor harp. Its clawed furniture feet ignore nonmagical difficult terrain made from rubble, furniture, and loose objects."))
+        attackFeature("Talons", paragraph(`<strong>Melee Weapon Attack:</strong> +5 to hit. Hit: 1d6+3 slashing damage.`), {toHit: 5, damage: [["1d6+3", "slashing"]]}),
+        saveFeature("Discordant Song", paragraph(`Creatures in a 15-foot radius must make a <strong>DC 13 Wisdom save</strong>. On a failure, a creature has disadvantage on its next attack and cannot use Legend until then.`), {ability: "wis", dc: 13, target: "creature", template: {type: "radius", size: 15}}),
+        utilityFeature("Clawfoot Scuttle", paragraph("Harps is a grounded living floor harp. Its clawed furniture feet ignore nonmagical difficult terrain made from rubble, furniture, and loose objects."), {activation: "special"})
       ]
     }),
     npc({
@@ -135,10 +224,36 @@ function monsterActors() {
       abilities: {str: 16, dex: 14, con: 15, int: 12, wis: 14, cha: 16}, saves: ["wis", "cha"],
       biography: paragraph("A charming, desire-twisting letter-shifted monster with the campaign's black-ink influence."),
       items: [
-        feature("Multiattack", paragraph("Satyn makes its available attacks.")),
-        feature("Horn Gore", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+5", "+5 to hit")}. Hit: ${roll("2d6+3", "piercing damage")}.`)),
-        feature("Silver Tongue", paragraph(`One creature within 30 feet must succeed on a <strong>DC 14 Wisdom save</strong> or use its reaction to move toward Satyn by the safest available route.`)),
-        feature("Twisting Desire (Recharge 6)", paragraph(`One creature within 30 feet must succeed on a <strong>DC 14 Charisma save</strong> or be unable to willingly target Satyn with attacks or harmful spells until the end of its next turn.`))
+        utilityFeature("Multiattack", paragraph("Satyn makes its available attacks.")),
+        attackFeature("Horn Gore", paragraph(`<strong>Melee Weapon Attack:</strong> +5 to hit. Hit: 2d6+3 piercing damage.`), {toHit: 5, damage: [["2d6+3", "piercing"]]}),
+        saveFeature("Silver Tongue", paragraph(`One creature within 30 feet must succeed on a <strong>DC 14 Wisdom save</strong> or use its reaction to move toward Satyn by the safest available route.`), {ability: "wis", dc: 14, range: 30}),
+        saveFeature("Twisting Desire (Recharge 6)", paragraph(`One creature within 30 feet must succeed on a <strong>DC 14 Charisma save</strong> or be unable to willingly target Satyn with attacks or harmful spells until the end of its next turn.`), {ability: "cha", dc: 14, range: 30})
+      ]
+    }),
+    npc({
+      name: "Young Satyn Minion",
+      img: art("young-satyn/young-satyn-profile.webp"), token: art("young-satyn/young-satyn-token.webp"),
+      ac: 12, hp: 9, cr: 0.25, speed: 35, creatureSize: "sm",
+      abilities: {str: 12, dex: 14, con: 12, int: 8, wis: 11, cha: 10}, saves: [],
+      biography: paragraph("A smaller, half-formed Satyn whose horns and confidence have not fully grown in. It darts at isolated targets but lacks the elder Satyn's charm magic and multiattack."),
+      items: [
+        attackFeature("Ink-Slick Horns", paragraph("<strong>Melee Weapon Attack:</strong> +4 to hit, reach 5 feet. Hit: 1d6+2 piercing damage."), {toHit: 4, damage: [["1d6+2", "piercing"]]}),
+        utilityFeature("Skitter Away", paragraph("<strong>Reaction, once per round:</strong> After a creature misses the Young Satyn with a melee attack, it moves up to 10 feet without provoking an opportunity attack from that creature."), {activation: "reaction", condition: "After a melee attack misses it"})
+      ]
+    }),
+    npc({
+      name: "Ink Blot Minion",
+      img: art("ink-blot/ink-blot-profile.webp"), token: art("ink-blot/ink-blot-token.webp"),
+      ac: 10, hp: 5, cr: 0, speed: 20, climb: 10, creatureSize: "tiny", tokenScale: 0.78,
+      abilities: {str: 6, dex: 10, con: 10, int: 3, wis: 8, cha: 3}, saves: [],
+      traits: {
+        ci: {value: ["prone"], custom: ""},
+        languages: {value: [], custom: "Understands simple gestures but cannot speak"}
+      },
+      biography: paragraph("A confused spill of discarded editorial ink. It wobbles toward motion, smears whatever it touches, and collapses after almost any solid hit."),
+      items: [
+        attackFeature("Clumsy Smear", paragraph("<strong>Melee Weapon Attack:</strong> +2 to hit, reach 5 feet. Hit: 1d4 bludgeoning damage. The target cannot take reactions until the start of the Ink Blot's next turn."), {toHit: 2, damage: [["1d4", "bludgeoning"]]}),
+        utilityFeature("Barely Held Together", paragraph("The Ink Blot has only 5 hit points and no damage resistances. At 0 hit points, it harmlessly collapses into an ordinary puddle of ink."), {activation: "special"})
       ]
     }),
     npc({
@@ -148,9 +263,9 @@ function monsterActors() {
       abilities: {str: 18, dex: 12, con: 18, int: 6, wis: 11, cha: 8}, saves: ["con", "dex"],
       biography: paragraph("A multi-valved inky hydrant beast reconstructed from the canonical Monster Stat Blocks tab."),
       items: [
-        feature("Slam", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+7", "+7 to hit")}. Hit: ${roll("2d8+4", "bludgeoning damage")}.`)),
-        feature("Ink Spray (Recharge 5–6)", paragraph(`Hydrant sprays a 30-foot cone. Each creature in the cone makes a <strong>DC 15 Dexterity save</strong>, taking ${roll("3d6", "necrotic damage")} and becoming <strong>Under Review</strong> on a failure, or half damage on a success.`) + underReview),
-        feature("Burst Valve", paragraph("The first time Hydrant falls below half its hit points, Ink Spray immediately recharges and Hydrant uses it."))
+        attackFeature("Slam", paragraph(`<strong>Melee Weapon Attack:</strong> +7 to hit. Hit: 2d8+4 bludgeoning damage.`), {toHit: 7, damage: [["2d8+4", "bludgeoning"]]}),
+        saveFeature("Ink Spray (Recharge 5–6)", paragraph(`Hydrant sprays a 30-foot cone. Each creature in the cone makes a <strong>DC 15 Dexterity save</strong>, taking 3d6 necrotic damage and becoming <strong>Under Review</strong> on a failure, or half damage on a success.`) + underReview, {ability: "dex", dc: 15, damage: [["3d6", "necrotic"]], onSave: "half", target: "creature", template: {type: "cone", size: 30}}),
+        utilityFeature("Burst Valve", paragraph("The first time Hydrant falls below half its hit points, Ink Spray immediately recharges and Hydrant uses it."), {activation: "special"})
       ]
     }),
     npc({
@@ -160,9 +275,9 @@ function monsterActors() {
       abilities: {str: 10, dex: 14, con: 15, int: 16, wis: 16, cha: 12}, saves: ["int", "wis"],
       biography: paragraph("A hovering, brain-and-tendril letter-shifted monster infused with living editorial ink."),
       items: [
-        feature("Psychic Tendrils", paragraph(`<strong>Attack:</strong> ${roll("1d20+6", "+6 to hit")}. Hit: ${roll("2d6+4", "psychic damage")}.`)),
-        feature("Nervous Gaze", paragraph(`One creature within 60 feet makes a <strong>DC 15 Wisdom save</strong>. On a failure, it loses concentration and becomes <strong>Dazed</strong>—disadvantage on attacks, saves, and checks—until it takes damage.`)),
-        feature("Brain Fog Aura", paragraph("A creature entering the 20-foot aura must succeed on a <strong>DC 13 Intelligence save</strong> or be unable to take bonus actions until the start of its next turn."))
+        attackFeature("Psychic Tendrils", paragraph(`<strong>Melee Attack:</strong> +6 to hit. Hit: 2d6+4 psychic damage.`), {toHit: 6, damage: [["2d6+4", "psychic"]], range: 10}),
+        saveFeature("Nervous Gaze", paragraph(`One creature within 60 feet makes a <strong>DC 15 Wisdom save</strong>. On a failure, it loses concentration and becomes <strong>Dazed</strong>—disadvantage on attacks, saves, and checks—until it takes damage.`), {ability: "wis", dc: 15, range: 60}),
+        saveFeature("Brain Fog Aura", paragraph("A creature entering the 20-foot aura must succeed on a <strong>DC 13 Intelligence save</strong> or be unable to take bonus actions until the start of its next turn."), {ability: "int", dc: 13, target: "creature", template: {type: "radius", size: 20}, activation: "special"})
       ]
     }),
     npc({
@@ -172,11 +287,14 @@ function monsterActors() {
       abilities: {str: 19, dex: 12, con: 18, int: 8, wis: 12, cha: 9}, saves: ["str", "con"],
       biography: paragraph("An amphibious, ink-touched minotaur with human-shaped scaly legs, equally usable on land or underwater."),
       items: [
-        feature("Multiattack", paragraph("Minowtaur makes one Anchor Slam and one Horn Gore attack.")),
-        feature("Anchor Slam", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+7", "+7 to hit")}, reach 10 feet. Hit: ${roll("2d8+4", "bludgeoning damage")}; the target must succeed on a <strong>DC 15 Strength save</strong> or fall prone.`)),
-        feature("Horn Gore", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+7", "+7 to hit")}. Hit: ${roll("2d6+4", "piercing damage")}.`)),
-        feature("Net Toss (Recharge 5–6)", paragraph("One creature within 30 feet must succeed on a <strong>DC 15 Dexterity save</strong> or become restrained. It can escape with a DC 15 Strength (Athletics) check.")),
-        feature("Drag Under", paragraph(`Against a restrained creature, Minowtaur automatically grapples it. At the start of the target's turn it makes a <strong>DC 15 Constitution save</strong>, taking ${roll("1d8", "bludgeoning damage")} on a failure and beginning to suffocate if underwater.`))
+        utilityFeature("Multiattack", paragraph("Minowtaur makes one Anchor Slam and one Horn Gore attack.")),
+        actionFeature("Anchor Slam", paragraph(`<strong>Melee Weapon Attack:</strong> +7 to hit, reach 10 feet. Hit: 2d8+4 bludgeoning damage; the target must succeed on a <strong>DC 15 Strength save</strong> or fall prone.`), [
+          attackActivity({toHit: 7, damage: [["2d8+4", "bludgeoning"]], range: 10}),
+          saveActivity({ability: "str", dc: 15, range: 10})
+        ]),
+        attackFeature("Horn Gore", paragraph(`<strong>Melee Weapon Attack:</strong> +7 to hit. Hit: 2d6+4 piercing damage.`), {toHit: 7, damage: [["2d6+4", "piercing"]]}),
+        saveFeature("Net Toss (Recharge 5–6)", paragraph("One creature within 30 feet must succeed on a <strong>DC 15 Dexterity save</strong> or become restrained. It can escape with a DC 15 Strength (Athletics) check."), {ability: "dex", dc: 15, range: 30}),
+        saveFeature("Drag Under", paragraph(`Against a restrained creature, Minowtaur automatically grapples it. At the start of the target's turn it makes a <strong>DC 15 Constitution save</strong>, taking 1d8 bludgeoning damage on a failure and beginning to suffocate if underwater.`), {ability: "con", dc: 15, damage: [["1d8", "bludgeoning"]], onSave: "none", activation: "special"})
       ]
     }),
     npc({
@@ -190,15 +308,18 @@ function monsterActors() {
       },
       biography: `<blockquote>There is no hatred in its eyes. Only the certainty that your story requires revision.</blockquote>${paragraph("A tall humanoid of flowing black ink. Its face continuously becomes blurred memories while letters and pages nearby lose their words.")}`,
       items: [
-        feature("Multiattack", paragraph("The Redactor makes two Ink Blade attacks and one Editorial Touch attack.")),
-        feature("Ink Blade", paragraph(`<strong>Melee Weapon Attack:</strong> ${roll("1d20+9", "+9 to hit")}. Hit: ${roll("2d8+5", "slashing damage")} plus ${roll("2d6", "psychic damage")}.`)),
-        feature("Editorial Touch", paragraph(`<strong>Melee Attack:</strong> ${roll("1d20+9", "+9 to hit")}. Hit: ${roll("3d8", "psychic damage")}, and immediately roll on the campaign's Memory Revision table.`)),
-        feature("Impossible Form", paragraph("At the beginning of each round, the Redactor copies the silhouette of a creature it has seen. Attacks against it have disadvantage unless the attacker first uses a bonus action and succeeds on a DC 15 Wisdom (Insight) check.")),
-        feature("Editorial Revision (Recharge 5–6)", paragraph("The Redactor changes one letter in one visible word of 3–8 letters. The revised word changes reality as adjudicated by the GM.") + list(["Wall → Well", "Chain → Chair", "Gate → Gaze", "Torch → Torso", "Floor → Flood", "Light → Fight", "Vine → Wine"])),
-        feature("Legendary: Ink Step", paragraph("The Redactor spends 1 legendary action to teleport up to 30 feet between areas of shadow or ink.")),
-        feature("Legendary: Smear", paragraph("The Redactor spends 1 legendary action. Creatures within 15 feet make a <strong>DC 16 Dexterity save</strong> or fall prone.")),
-        feature("Legendary: Strike Through (Costs 2)", paragraph("The Redactor erases one condition affecting it, or suppresses one beneficial magical effect on a target until the end of that target's next turn.")),
-        feature("Death Burst: The Scribe Awaits", paragraph("At 0 hit points, the Redactor does not simply die. Creatures within 20 feet make a <strong>DC 16 Dexterity save</strong>, then become Under Review and make a <strong>DC 16 Wisdom save</strong> for the permanent Memory Table. The ink writes: <em>The Scribe awaits.</em>") + underReview)
+        utilityFeature("Multiattack", paragraph("The Redactor makes two Ink Blade attacks and one Editorial Touch attack.")),
+        attackFeature("Ink Blade", paragraph("<strong>Melee Weapon Attack:</strong> +9 to hit. Hit: 2d8+5 slashing damage plus 2d6 psychic damage."), {toHit: 9, damage: [["2d8+5", "slashing"], ["2d6", "psychic"]]}),
+        attackFeature("Editorial Touch", paragraph("<strong>Melee Attack:</strong> +9 to hit. Hit: 3d8 psychic damage, and immediately roll on the campaign's Memory Revision table."), {toHit: 9, damage: [["3d8", "psychic"]]}),
+        utilityFeature("Impossible Form", paragraph("At the beginning of each round, the Redactor copies the silhouette of a creature it has seen. Attacks against it have disadvantage unless the attacker first uses a bonus action and succeeds on a DC 15 Wisdom (Insight) check."), {activation: "special"}),
+        utilityFeature("Editorial Revision (Recharge 5–6)", paragraph("The Redactor changes one letter in one visible word of 3–8 letters. The revised word changes reality as adjudicated by the GM.") + list(["Wall → Well", "Chain → Chair", "Gate → Gaze", "Torch → Torso", "Floor → Flood", "Light → Fight", "Vine → Wine"])),
+        utilityFeature("Legendary: Ink Step", paragraph("The Redactor spends 1 legendary action to teleport up to 30 feet between areas of shadow or ink."), {activation: "legendary"}),
+        saveFeature("Legendary: Smear", paragraph("The Redactor spends 1 legendary action. Creatures within 15 feet make a <strong>DC 16 Dexterity save</strong> or fall prone."), {ability: "dex", dc: 16, target: "creature", template: {type: "radius", size: 15}, activation: "legendary"}),
+        utilityFeature("Legendary: Strike Through (Costs 2)", paragraph("The Redactor erases one condition affecting it, or suppresses one beneficial magical effect on a target until the end of that target's next turn."), {activation: "legendary"}),
+        actionFeature("Death Burst: The Scribe Awaits", paragraph("At 0 hit points, the Redactor does not simply die. Creatures within 20 feet make a <strong>DC 16 Dexterity save</strong>, then become Under Review and make a <strong>DC 16 Wisdom save</strong> for the permanent Memory Table. The ink writes: <em>The Scribe awaits.</em>") + underReview, [
+          saveActivity({ability: "dex", dc: 16, target: "creature", template: {type: "radius", size: 20}, activation: "special"}),
+          saveActivity({ability: "wis", dc: 16, target: "creature", template: {type: "radius", size: 20}, activation: "special"})
+        ], {activation: "special"})
       ]
     }),
     npc({
@@ -212,10 +333,13 @@ function monsterActors() {
       },
       biography: `<blockquote>History is only cruel because no one bothered to edit it.</blockquote>${paragraph("The final boss: a larger-than-life hooded figure whose overcloak shadows the eyes, surrounded by living ink and an unfinished manuscript.")}`,
       items: [
-        feature("Legendary Resistance (3/Day)", paragraph("If the Scribe fails a saving throw, it can choose to succeed instead.")),
-        feature("Multiattack", paragraph("The Scribe makes two Ink Quill attacks, or makes one Ink Quill attack and casts a spell.")),
-        feature("Ink Quill", paragraph(`<strong>Ranged Spell Attack:</strong> ${roll("1d20+10", "+10 to hit")}, range 120 feet. Hit: ${roll("3d8+5", "force damage")} plus ${roll("2d8", "psychic damage")}; the target must succeed on a <strong>DC 15 Wisdom save</strong> or become Under Review.`) + underReview),
-        feature("Spellcasting (18th Level)", paragraph("The Scribe is an 18th-level Intelligence spellcaster (spell save DC 18, +10 to hit).") + list([
+        utilityFeature("Legendary Resistance (3/Day)", paragraph("If the Scribe fails a saving throw, it can choose to succeed instead."), {activation: "special"}),
+        utilityFeature("Multiattack", paragraph("The Scribe makes two Ink Quill attacks, or makes one Ink Quill attack and casts a spell.")),
+        actionFeature("Ink Quill", paragraph(`<strong>Ranged Spell Attack:</strong> +10 to hit, range 120 feet. Hit: 3d8+5 force damage plus 2d8 psychic damage; the target must succeed on a <strong>DC 15 Wisdom save</strong> or become Under Review.`) + underReview, [
+          attackActivity({toHit: 10, damage: [["3d8+5", "force"], ["2d8", "psychic"]], range: 120, attackType: "spell"}),
+          saveActivity({ability: "wis", dc: 15, range: 120})
+        ]),
+        utilityFeature("Spellcasting (18th Level)", paragraph("The Scribe is an 18th-level Intelligence spellcaster (spell save DC 18, +10 to hit).") + list([
           "Cantrips: Fire Bolt, Mage Hand, Mind Sliver, Minor Illusion",
           "1st: Shield, Magic Missile",
           "2nd: Mirror Image, Misty Step",
@@ -232,13 +356,13 @@ function monsterActors() {
         spell("Dimension Door", 4), spell("Greater Invisibility", 4),
         spell("Wall of Force", 5), spell("Hold Monster", 5),
         spell("Chain Lightning", 6), spell("Forcecage", 7),
-        feature("Edit Dice (5d8)", paragraph("The Scribe has five d8 Edit Dice. Spend and roll one die to reduce damage, alter a saving throw, subtract from a successful attack roll, move a creature 5 × the roll feet, or cancel a reaction/opportunity attack.")),
-        feature("Rewrite Fate (1/Day)", paragraph("When a creature rolls a natural 20 against the Scribe, the critical hit instead resolves against the attacker, who also becomes Under Review without a save.")),
-        feature("Ink Echo", paragraph("After the Scribe casts a spell of 3rd level or higher, choose one echo:") + list(["Create ink difficult terrain.", `Creatures within 10 feet take ${roll("2d6", "force damage")}.`, "A pool forces a DC 16 Dexterity save or restrains.", "A shadow repeats the spell at half effect."])),
-        feature("Legendary: Ink Step", paragraph("Spend 1 legendary action to teleport up to 40 feet.")),
-        feature("Legendary: Cross Out (Costs 2)", paragraph("Suppress one effect or condition until the appropriate end point chosen by the GM.")),
-        feature("Legendary: Margin Note (Costs 3)", paragraph("Summon a Gordon, Harps, or Satyn in an unoccupied space within 30 feet.")),
-        feature("Lair: Living Manuscript", paragraph("At initiative count 20, roll 1d8. At 25% hit points or fewer, roll twice.") + list([
+        utilityFeature("Edit Dice (5d8)", paragraph("The Scribe has five d8 Edit Dice. Spend and roll one die to reduce damage, alter a saving throw, subtract from a successful attack roll, move a creature 5 × the roll feet, or cancel a reaction/opportunity attack."), {formula: "1d8"}),
+        utilityFeature("Rewrite Fate (1/Day)", paragraph("When a creature rolls a natural 20 against the Scribe, the critical hit instead resolves against the attacker, who also becomes Under Review without a save."), {activation: "reaction"}),
+        utilityFeature("Ink Echo", paragraph("After the Scribe casts a spell of 3rd level or higher, choose one echo:") + list(["Create ink difficult terrain.", `Creatures within 10 feet take ${roll("2d6", "force damage")}.`, "A pool forces a DC 16 Dexterity save or restrains.", "A shadow repeats the spell at half effect."]), {activation: "special"}),
+        utilityFeature("Legendary: Ink Step", paragraph("Spend 1 legendary action to teleport up to 40 feet."), {activation: "legendary"}),
+        utilityFeature("Legendary: Cross Out (Costs 2)", paragraph("Suppress one effect or condition until the appropriate end point chosen by the GM."), {activation: "legendary"}),
+        utilityFeature("Legendary: Margin Note (Costs 3)", paragraph("Summon a Gordon, Harps, or Satyn in an unoccupied space within 30 feet."), {activation: "legendary"}),
+        utilityFeature("Lair: Living Manuscript", paragraph("At initiative count 20, roll 1d8. At 25% hit points or fewer, roll twice.") + list([
           "1 — Pull every creature 15 feet toward the center.",
           "2 — Summon a Gordon, Harps, Satyn, or Medulas.",
           "3 — Halve all weapon and spell ranges.",
@@ -247,7 +371,7 @@ function monsterActors() {
           "6 — All healing is halved.",
           "7 — No creature can gain advantage.",
           "8 — Living ink fills 10 feet around the Scribe; it is difficult terrain, and creatures there make a DC 16 Dexterity save or become Under Review."
-        ]))
+        ]), {activation: "lair", formula: "1d8"})
       ]
     }),
     npc({
@@ -257,13 +381,13 @@ function monsterActors() {
       abilities: {str: 1, dex: 18, con: 20, int: 20, wis: 20, cha: 20}, saves: [],
       biography: paragraph("Encounter object, not a conventional creature. Its 3 hit points represent Integrity, not ordinary damage. Track sentence completion as Progress 0/5."),
       items: [
-        feature("Integrity 3 / Progress 0–5", paragraph("The Pen has no normal hit points. Treat its displayed 3 HP as Integrity. Each uninterrupted round completes one sentence and adds 1 Progress. Each hero has one Author's Revision—a fifth-level Rewrite—to interrupt a sentence; a successful interruption removes 1 Integrity.")),
-        feature("Sentence 1: Heroes Never Arrived", paragraph("All heroes are dazed.")),
-        feature("Sentence 2: Roads Were Never Found", paragraph("The Lost Roads pull the party away.")),
-        feature("Sentence 3: Hope Succumbs to Fear", paragraph("Each hero makes a DC 18 Wisdom save. On a failure, the hero is frightened, uses its reaction to move its full speed away, and cannot use Legend.")),
-        feature("Sentence 4: Heroes Became Monsters", paragraph("Create 1-HP inky duplicates of the heroes.")),
-        feature("Sentence 5: Final Draft Complete", paragraph("Under Review becomes permanent; divine lineage is stripped; the PCs remain home.")),
-        feature("At Integrity 0", paragraph("The Pen falls. The heroes choose whether to destroy it, attune to it, or attempt one final one-letter revision."))
+        utilityFeature("Integrity 3 / Progress 0–5", paragraph("The Pen has no normal hit points. Treat its displayed 3 HP as Integrity. Each uninterrupted round completes one sentence and adds 1 Progress. Each hero has one Author's Revision—a fifth-level Rewrite—to interrupt a sentence; a successful interruption removes 1 Integrity."), {activation: "special"}),
+        utilityFeature("Sentence 1: Heroes Never Arrived", paragraph("All heroes are dazed.")),
+        utilityFeature("Sentence 2: Roads Were Never Found", paragraph("The Lost Roads pull the party away.")),
+        saveFeature("Sentence 3: Hope Succumbs to Fear", paragraph("Each hero makes a DC 18 Wisdom save. On a failure, the hero is frightened, uses its reaction to move its full speed away, and cannot use Legend."), {ability: "wis", dc: 18, target: "creature"}),
+        utilityFeature("Sentence 4: Heroes Became Monsters", paragraph("Create 1-HP inky duplicates of the heroes.")),
+        utilityFeature("Sentence 5: Final Draft Complete", paragraph("Under Review becomes permanent; divine lineage is stripped; the PCs remain home.")),
+        utilityFeature("At Integrity 0", paragraph("The Pen falls. The heroes choose whether to destroy it, attune to it, or attempt one final one-letter revision."), {activation: "special"})
       ]
     })
   ];
@@ -597,20 +721,27 @@ async function resolveCompendiumItem(item) {
   return clone;
 }
 
-async function upsertActor(data, folder) {
+async function upsertActor(data, folder, {preserveExisting = false, replaceMatchingNpc = false} = {}) {
   const sameName = game.actors.filter(actor => actor.name === data.name);
+  if (preserveExisting && sameName.length) {
+    return {status: "skipped", name: data.name, reason: "Existing player-character Actors are preserved."};
+  }
   const managed = sameName.find(actor => actor.getFlag(ACTOR_MODULE_ID, GENERATED_FLAG));
   const unowned = sameName.find(actor => !actor.getFlag(ACTOR_MODULE_ID, GENERATED_FLAG));
-  if (unowned && !managed) {
+  const matchingNpc = replaceMatchingNpc ? sameName.find(actor => actor.type === "npc") : null;
+  if (unowned && !managed && !matchingNpc) {
     return {status: "skipped", name: data.name, reason: "An Actor with this name already exists and was not created by this installer."};
   }
 
   const {items, ...actorData} = data;
   actorData.folder = folder.id;
-  let actor = managed;
+  let actor = managed ?? matchingNpc;
   if (actor) {
+    const replacingUnmanagedNpc = !actor.getFlag(ACTOR_MODULE_ID, GENERATED_FLAG) && replaceMatchingNpc;
     await actor.update(actorData);
-    const generatedItems = actor.items.filter(item => item.getFlag(ACTOR_MODULE_ID, GENERATED_FLAG)).map(item => item.id);
+    const generatedItems = replacingUnmanagedNpc
+      ? actor.items.map(item => item.id)
+      : actor.items.filter(item => item.getFlag(ACTOR_MODULE_ID, GENERATED_FLAG)).map(item => item.id);
     if (generatedItems.length) await actor.deleteEmbeddedDocuments("Item", generatedItems);
   } else {
     actor = await Actor.create(actorData, {renderSheet: false});
@@ -628,8 +759,8 @@ export async function installCampaignActors() {
   const pcFolder = await ensureFolder("Edited — PCs");
   const npcFolder = await ensureFolder("Edited — NPCs");
   const results = [];
-  for (const data of monsterActors()) results.push(await upsertActor(data, monsterFolder));
-  for (const data of pcActors()) results.push(await upsertActor(data, pcFolder));
+  for (const data of monsterActors()) results.push(await upsertActor(data, monsterFolder, {replaceMatchingNpc: true}));
+  for (const data of pcActors()) results.push(await upsertActor(data, pcFolder, {preserveExisting: true}));
   for (const data of campaignNpcs()) results.push(await upsertActor(data, npcFolder));
 
   const created = results.filter(result => result.status === "created").length;
@@ -640,6 +771,22 @@ export async function installCampaignActors() {
   return results;
 }
 
+export async function refreshMonsterActors() {
+  if (!game.user?.isGM) return ui.notifications.warn("Only a GM can refresh monster Actors.");
+  if (game.system.id !== "dnd5e") return ui.notifications.error("This installer requires the D&D5e system.");
+
+  const monsterFolder = await ensureFolder("Edited — Monsters");
+  const results = [];
+  for (const data of monsterActors()) {
+    results.push(await upsertActor(data, monsterFolder, {replaceMatchingNpc: true}));
+  }
+  const created = results.filter(result => result.status === "created").length;
+  const updated = results.filter(result => result.status === "updated").length;
+  const skipped = results.filter(result => result.status === "skipped").length;
+  ui.notifications.info(`Monster sheets ready: ${created} created, ${updated} refreshed, ${skipped} skipped. Player-character sheets were not touched.`);
+  return results;
+}
+
 Hooks.once("ready", () => {
-  globalThis.EditedCampaignActors = {installCampaignActors};
+  globalThis.EditedCampaignActors = {installCampaignActors, refreshMonsterActors};
 });

@@ -21,7 +21,7 @@ Updating the module does not delete world-created scenes, actors, journals, or t
 
 ## Creating a release
 
-Open **Actions → Build Foundry release → Run workflow**, enter a semantic version tag such as `v1.1.5`, and run it. The workflow:
+Bumping the root `module.json` version on `main` automatically runs **Build Foundry release**. Manual workflow dispatch remains available for rebuilding an existing semantic version tag. The workflow:
 
 1. Updates the root manifest version and download URL.
 2. Commits that manifest change to `main` when needed.
@@ -30,3 +30,15 @@ Open **Actions → Build Foundry release → Run workflow**, enter a semantic ve
 5. Validates the archive and uploads it to the release.
 
 The obsolete nested source copy was removed. `module.json` at the repository root is the only live manifest.
+
+## Museum heist controls (v1.1.5)
+
+After updating to v1.1.5 and reloading the world, run this once as the GM from a Script Macro or the browser console:
+
+```javascript
+await EditedMuseumHeist.install();
+```
+
+This adds the spotlighted nighttime tablet gallery, reversible glass-lifting claw, synchronized `00:18` countdown, one-minute quiet beep track, and a monster-only sheet refresh control. See `MUSEUM_HEIST_v1.1.5.md` for the controls.
+
+Existing player-character Actors are preserved. The museum installer and monster refresh do not modify PC sheets.

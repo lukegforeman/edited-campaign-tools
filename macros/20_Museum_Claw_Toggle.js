@@ -1,0 +1,1 @@
+await EditedMuseumHeist.toggleClaw();
