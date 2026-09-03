@@ -8,7 +8,12 @@ const CLAW_EMPTY = `${MUSEUM_ROOT}/assets/art/tiles/museum-claw/claw-empty.webp`
 const CLAW_GLASS = `${MUSEUM_ROOT}/assets/art/tiles/museum-claw/claw-with-glass.webp`;
 const BEEP_TRACK = `${MUSEUM_ROOT}/assets/audio/museum-beeps-60s.ogg`;
 const MUSEUM_LEVEL_ID = "museumGalleryLvl";
-const MUSEUM_VERSION = 2;
+const CLAW_DESCENT_MS = 5000;
+const CLAW_GRAB_PAUSE_MS = 700;
+const CLAW_SHORT_TRAVEL_MS = 1200;
+const CLAW_RETRACT_MS = 5000;
+const CLAW_HOVER_OFFSET_PX = 40;
+const MUSEUM_VERSION = 3;
 
 let museumBeepAudio = null;
 let clawBusy = false;
@@ -41,6 +46,14 @@ Hooks.once("ready", () => {
     countdown: advanceMuseumCountdown,
     resetCountdown: resetMuseumCountdown
   };
+});
+
+Hooks.on("canvasReady", () => {
+  const scene = activeMuseumScene();
+  const glassRaised = Boolean(game.settings.get(MUSEUM_MODULE_ID, "museumGlassRaised"));
+  if (scene && glassRaised) {
+    playLocalClawAnimation({sceneId: scene.id, direction: "hold", nonce: foundry.utils.randomID()});
+  }
 });
 
 function museumFlags(kind) {
@@ -251,41 +264,68 @@ async function playLocalClawAnimation({sceneId, direction, nonce}) {
   element.id = "edited-museum-claw";
   element.alt = "";
   element.draggable = false;
-  element.src = direction === "lower" ? CLAW_GLASS : CLAW_EMPTY;
+  element.src = ["lower", "hold"].includes(direction) ? CLAW_GLASS : CLAW_EMPTY;
   document.body.appendChild(element);
 
   const controller = {cancelled: false, cancel() { this.cancelled = true; element.remove(); }};
   localClawAnimation = controller;
   const hiddenY = -1580;
   const caseY = -270;
+  const hoverY = caseY - CLAW_HOVER_OFFSET_PX;
   const sceneX = 1024;
   const sceneWidth = 1024;
   const sceneHeight = 1536;
-  const descent = 1550;
-  const pause = 300;
-  const ascent = 1550;
   const started = performance.now();
   let swapped = false;
+
+  const holdFrame = () => {
+    if (controller.cancelled || canvas.scene?.id !== sceneId) return controller.cancel();
+    if (!positionClawElement(element, sceneX, hoverY, sceneWidth, sceneHeight)) return controller.cancel();
+    requestAnimationFrame(holdFrame);
+  };
+
+  if (direction === "hold") {
+    requestAnimationFrame(holdFrame);
+    return;
+  }
 
   const frame = now => {
     if (controller.cancelled || canvas.scene?.id !== sceneId) return controller.cancel();
     const elapsed = now - started;
     let y;
-    if (elapsed < descent) {
-      y = hiddenY + (caseY - hiddenY) * easeInOutCubic(elapsed / descent);
-    } else if (elapsed < descent + pause) {
-      y = caseY;
-      if (!swapped) {
-        element.src = direction === "lift" ? CLAW_GLASS : CLAW_EMPTY;
-        swapped = true;
+    if (direction === "lift") {
+      if (elapsed < CLAW_DESCENT_MS) {
+        y = hiddenY + (caseY - hiddenY) * easeInOutCubic(elapsed / CLAW_DESCENT_MS);
+      } else if (elapsed < CLAW_DESCENT_MS + CLAW_GRAB_PAUSE_MS) {
+        y = caseY;
+        if (!swapped) {
+          element.src = CLAW_GLASS;
+          swapped = true;
+        }
+      } else if (elapsed < CLAW_DESCENT_MS + CLAW_GRAB_PAUSE_MS + CLAW_SHORT_TRAVEL_MS) {
+        const progress = (elapsed - CLAW_DESCENT_MS - CLAW_GRAB_PAUSE_MS) / CLAW_SHORT_TRAVEL_MS;
+        y = caseY + (hoverY - caseY) * easeInOutCubic(progress);
+      } else {
+        requestAnimationFrame(holdFrame);
+        return;
       }
-    } else if (elapsed < descent + pause + ascent) {
-      const progress = (elapsed - descent - pause) / ascent;
-      y = caseY + (hiddenY - caseY) * easeInOutCubic(progress);
     } else {
-      element.remove();
-      if (localClawAnimation === controller) localClawAnimation = null;
-      return;
+      if (elapsed < CLAW_SHORT_TRAVEL_MS) {
+        y = hoverY + (caseY - hoverY) * easeInOutCubic(elapsed / CLAW_SHORT_TRAVEL_MS);
+      } else if (elapsed < CLAW_SHORT_TRAVEL_MS + CLAW_GRAB_PAUSE_MS) {
+        y = caseY;
+        if (!swapped) {
+          element.src = CLAW_EMPTY;
+          swapped = true;
+        }
+      } else if (elapsed < CLAW_SHORT_TRAVEL_MS + CLAW_GRAB_PAUSE_MS + CLAW_RETRACT_MS) {
+        const progress = (elapsed - CLAW_SHORT_TRAVEL_MS - CLAW_GRAB_PAUSE_MS) / CLAW_RETRACT_MS;
+        y = caseY + (hiddenY - caseY) * easeInOutCubic(progress);
+      } else {
+        element.remove();
+        if (localClawAnimation === controller) localClawAnimation = null;
+        return;
+      }
     }
     if (!positionClawElement(element, sceneX, y, sceneWidth, sceneHeight)) return controller.cancel();
     requestAnimationFrame(frame);
@@ -318,12 +358,18 @@ async function toggleMuseumClaw() {
     const direction = currentlyRaised ? "lower" : "lift";
     emitMuseum({type: "museumClaw", sceneId: scene.id, direction, nonce: foundry.utils.randomID()});
 
-    await sleep(1600);
+    const backgroundSwitchDelay = direction === "lift" ? CLAW_DESCENT_MS : CLAW_SHORT_TRAVEL_MS;
+    const totalDuration = direction === "lift"
+      ? CLAW_DESCENT_MS + CLAW_GRAB_PAUSE_MS + CLAW_SHORT_TRAVEL_MS
+      : CLAW_SHORT_TRAVEL_MS + CLAW_GRAB_PAUSE_MS + CLAW_RETRACT_MS;
+    await sleep(backgroundSwitchDelay);
     const nextRaised = !currentlyRaised;
     await level.update({"background.src": nextRaised ? EXPOSED_BACKGROUND : COVERED_BACKGROUND});
     await game.settings.set(MUSEUM_MODULE_ID, "museumGlassRaised", nextRaised);
-    await sleep(1800);
-    ui.notifications.info(nextRaised ? "The claw raised the tablet's glass cover." : "The claw replaced the tablet's glass cover.");
+    await sleep(totalDuration - backgroundSwitchDelay);
+    ui.notifications.info(nextRaised
+      ? "The claw is holding the glass about two feet above the tablet."
+      : "The claw replaced the tablet's glass cover and retracted.");
     return nextRaised;
   } finally {
     clawBusy = false;

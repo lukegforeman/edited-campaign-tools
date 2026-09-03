@@ -2,10 +2,10 @@
   "id": "edited-campaign-tools",
   "title": "Edited Campaign Tools",
   "description": "Foundry VTT campaign toolkit for The Margin: campaign actors, scenes, journals, Legend HUD, synchronized theatrical effects, Lost Roads tools, museum assets, and audio cues.",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "url": "https://github.com/lukegforeman/edited-campaign-tools",
   "manifest": "https://raw.githubusercontent.com/lukegforeman/edited-campaign-tools/main/module.json",
-  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.6/Edited_Campaign_Tools_Module_v1.1.6.zip",
+  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.7/Edited_Campaign_Tools_Module_v1.1.7.zip",
   "authors": [
     {
       "name": "Campaign GM + OpenAI"
