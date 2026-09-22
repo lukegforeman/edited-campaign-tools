@@ -1,14 +1,14 @@
-{
+﻿{
   "id": "edited-campaign-tools",
   "title": "Edited Campaign Tools",
-  "description": "Foundry VTT campaign toolkit for The Margin: campaign actors, scenes, journals, Legend HUD, synchronized theatrical effects, Lost Roads tools, museum assets, and audio cues.",
-  "version": "1.1.7",
+  "description": "Foundry VTT campaign toolkit for The Margin: campaign actors, scenes, journals, Naomi Book Tour Flyer, Legend HUD, synchronized theatrical effects, Lost Roads tools, and audio cues.",
+  "version": "1.1.9",
   "url": "https://github.com/lukegforeman/edited-campaign-tools",
   "manifest": "https://raw.githubusercontent.com/lukegforeman/edited-campaign-tools/main/module.json",
-  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.7/Edited_Campaign_Tools_Module_v1.1.7.zip",
+  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.9/Edited_Campaign_Tools_Module_v1.1.9.zip",
   "authors": [
     {
-      "name": "Campaign GM + OpenAI"
+      "name": "Campaign GM + Luke Foreman"
     }
   ],
   "compatibility": {
@@ -38,6 +38,19 @@
   ],
   "styles": [
     "styles/edited-tools.css"
+  ],
+  "packs": [
+    {
+      "name": "session5-journals",
+      "label": "Session 5 Handouts & Journals",
+      "path": "packs/session5-journals",
+      "type": "JournalEntry",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    }
   ],
   "socket": true
 }
