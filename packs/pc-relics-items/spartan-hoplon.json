@@ -1,0 +1,34 @@
+{
+  "_id": "s5relicHoplon005",
+  "name": "Ancient Spartan Hoplon (Greek Shield)",
+  "type": "equipment",
+  "img": "icons/equipment/shield/round-wooden-red-boss.webp",
+  "system": {
+    "description": {
+      "value": "<div style=\"font-family: 'Inter', sans-serif; line-height: 1.6;\">\n<h3 style=\"color: #d4af37; border-bottom: 1px solid #30363d; margin-top: 0;\">🛡️ ANCIENT SPARTAN HOPLON</h3>\n<p><strong>Type:</strong> Shield (+2 AC) &bull; <strong>Origin:</strong> Looted from City Antiquities Museum (Session 4)</p>\n<p>A heavy, concave wooden shield faced with beaten bronze, bearing the weathered crimson chevron (Lambda) of ancient Sparta. Recovered from the antiquities display pedestal during the museum heist.</p>\n\n<h4 style=\"color: #58a6ff; margin-bottom: 0.3rem;\">PROPERTIES &amp; FEATURES:</h4>\n<ul>\n  <li><strong>Armor Class:</strong> +2 AC while equipped.</li>\n  <li><strong>Spartan Phalanx Guard:</strong> While wielding this shield, when an adjacent ally is targeted by an attack, you can use your <strong>Reaction</strong> to impose <strong>Disadvantage</strong> on the attack roll.</li>\n  <li><strong>Dorian Inscription:</strong> Archaic Greek characters pressed into the bronze rim resonate faintly with divine Greek bloodlines.</li>\n</ul>\n</div>",
+      "chat": ""
+    },
+    "source": { "custom": "Uneraseable Mistakes — Museum Antiquities" },
+    "quantity": 1,
+    "weight": { "value": 6, "units": "lb" },
+    "price": { "value": 150, "denomination": "gp" },
+    "equipped": true,
+    "rarity": "rare",
+    "identified": true,
+    "armor": { "value": 2, "type": "shield" },
+    "type": { "value": "shield" },
+    "activities": {
+      "actPhalanxGrd01": {
+        "_id": "actPhalanxGrd01",
+        "type": "utility",
+        "name": "Phalanx Guard",
+        "activation": { "type": "reaction", "value": 1, "condition": "When an adjacent ally is targeted by an attack" },
+        "range": { "value": "5", "units": "ft" },
+        "description": { "chatFlavor": "Reaction: Impose Disadvantage on an attack targeting an adjacent ally." }
+      }
+    }
+  },
+  "flags": {
+    "edited-campaign-tools": { "museumRelic": true, "session": 4 }
+  }
+}

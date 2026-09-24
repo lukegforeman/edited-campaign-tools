@@ -1,0 +1,24 @@
+{
+  "_id": "s5relicCuirass06",
+  "name": "Ancient Greek Bronze Cuirass",
+  "type": "equipment",
+  "img": "icons/equipment/chest/breastplate-sculpted-gold.webp",
+  "system": {
+    "description": {
+      "value": "<div style=\"font-family: 'Inter', sans-serif; line-height: 1.6;\">\n<h3 style=\"color: #d4af37; border-bottom: 1px solid #30363d; margin-top: 0;\">⚔️ ANCIENT GREEK BRONZE CUIRASS</h3>\n<p><strong>Type:</strong> Medium Armor (Breastplate) &bull; <strong>Origin:</strong> Looted from City Antiquities Museum (Session 4)</p>\n<p>A sculpted bronze breastplate and backplate depicting idealized musculature, salvaged from the central gallery pedestal of the City Museum of Antiquities. Despite being forged over two millennia ago, the bronze gleams with a polished golden-brown luster and bears no verdigris or corrosion.</p>\n\n<h4 style=\"color: #58a6ff; margin-bottom: 0.3rem;\">PROPERTIES &amp; FEATURES:</h4>\n<ul>\n  <li><strong>Armor Class:</strong> 14 + Dex modifier (max 2). Does not impose disadvantage on Stealth checks.</li>\n  <li><strong>Hoplite Resilience:</strong> You have <strong>Resistance to nonmagical piercing damage</strong> from ranged attacks (arrows, bolts, javelins).</li>\n  <li><strong>Weight of History:</strong> The armor feels unnaturally light and balanced to anyone carrying divine Greek blood.</li>\n</ul>\n</div>",
+      "chat": ""
+    },
+    "source": { "custom": "Uneraseable Mistakes — Museum Antiquities" },
+    "quantity": 1,
+    "weight": { "value": 20, "units": "lb" },
+    "price": { "value": 400, "denomination": "gp" },
+    "equipped": true,
+    "rarity": "rare",
+    "identified": true,
+    "armor": { "value": 14, "dex": 2, "type": "medium" },
+    "type": { "value": "medium" }
+  },
+  "flags": {
+    "edited-campaign-tools": { "museumRelic": true, "session": 4 }
+  }
+}

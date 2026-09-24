@@ -1,0 +1,45 @@
+{
+  "_id": "s5relicEmbers007",
+  "name": "Sunstone Embers of Apollo",
+  "type": "consumable",
+  "img": "icons/commodities/materials/ember-glowing.webp",
+  "system": {
+    "description": {
+      "value": "<div style=\"font-family: 'Inter', sans-serif; line-height: 1.6;\">\n<h3 style=\"color: #faad14; border-bottom: 1px solid #30363d; margin-top: 0;\">☀️ SUNSTONE EMBERS OF APOLLO</h3>\n<p><strong>Owner:</strong> Alfie (Sophie) &bull; <strong>Origin:</strong> Session 4.5 Sunstone Memory Transcription</p>\n<p>Warm, iridescent golden embers glowing with solar radiance inside a small sealed crystal vial. In Session 4.5, Alfie sat with the ancient stone, transcribing forgotten memories and melodies from the sunstone into song and living wood.</p>\n\n<h4 style=\"color: #d4af37; margin-bottom: 0.3rem;\">PROPERTIES &amp; CHARGES:</h4>\n<p><strong>Charges:</strong> <strong>3 Embers (Charges)</strong>. Regains 1 charge at dawn if placed in direct sunlight.</p>\n<ul>\n  <li><strong>Solar Radiance:</strong> Sheds bright light in a 20-foot radius and dim light for an additional 20 feet. Can be covered or unveiled as a free action.</li>\n  <li><strong>Memory Hearth (1 Charge):</strong> When Alfie sings or performs during a short or long rest, expend 1 ember: grant up to 4 allies temporary hit points equal to <code>1d6 + Charisma modifier</code>.</li>\n  <li><strong>Solar Ignition (1 Charge):</strong> As a bonus action, touch a weapon or spell focus: for 1 minute, weapon attacks or cantrips deal an additional <code>1d4 Radiant damage</code>.</li>\n  <li><strong>Song Echo:</strong> Touching an ember to natural wood reveals faint musical staves and poetic fragments recorded by ancient lyricists.</li>\n</ul>\n</div>",
+      "chat": ""
+    },
+    "source": { "custom": "Uneraseable Mistakes — Session 4.5" },
+    "quantity": 3,
+    "weight": { "value": 0.1, "units": "lb" },
+    "price": { "value": 100, "denomination": "gp" },
+    "equipped": true,
+    "rarity": "rare",
+    "identified": true,
+    "uses": { "value": 3, "max": "3", "per": "charges", "recovery": "1" },
+    "type": { "value": "trinket" },
+    "activities": {
+      "actMemHearth001": {
+        "_id": "actMemHearth001",
+        "type": "utility",
+        "name": "Memory Hearth (Rest Temp HP)",
+        "activation": { "type": "special" },
+        "consumption": { "targets": [{ "type": "itemUses", "value": "1" }], "scaling": { "allowed": false } },
+        "range": { "value": "30", "units": "ft" },
+        "target": { "affects": { "count": "4", "type": "creature" } },
+        "description": { "chatFlavor": "Spend 1 Ember: Grants 4 allies 1d6 + Cha temporary hit points during a rest." }
+      },
+      "actSolarIgnite02": {
+        "_id": "actSolarIgnite02",
+        "type": "utility",
+        "name": "Solar Ignition (+1d4 Radiant)",
+        "activation": { "type": "bonus", "value": 1 },
+        "consumption": { "targets": [{ "type": "itemUses", "value": "1" }], "scaling": { "allowed": false } },
+        "duration": { "value": "1", "units": "minute" },
+        "description": { "chatFlavor": "Spend 1 Ember: Weapon attacks and cantrips deal +1d4 Radiant damage for 1 minute." }
+      }
+    }
+  },
+  "flags": {
+    "edited-campaign-tools": { "session45": true, "pc": "Alfie" }
+  }
+}

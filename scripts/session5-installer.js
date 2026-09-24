@@ -26,13 +26,14 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
   globalThis.EditedSession5Installer = {
     install: installSession5,
-    setupHotbar: setupSession5Hotbar
+    setupHotbar: setupSession5Hotbar,
+    cleanupMacros: cleanupObsoleteMacros
   };
 
   if (game.user.isGM) {
     const installed = Number(game.settings.get(S5_MODULE_ID, "session5InstalledVer")) || 0;
-    if (installed < 3) {
-      console.log("Installing/Updating Session 5 content (scenes, journals, macros, tokens)...");
+    if (installed < 4) {
+      console.log("Installing/Updating Session 5 content (scenes, journals, macros, tokens, item compendium)...");
       await installSession5();
     }
   }
@@ -766,6 +767,11 @@ actor?.sheet.render(true);`,
       name: "10. Setup Session 5 GM Hotbar",
       command: `EditedSession5Installer.setupHotbar();`,
       img: "icons/svg/gear.svg"
+    },
+    {
+      name: "11. Red Alert Sequence",
+      command: `EditedCampaignTools.redAlert();`,
+      img: "icons/svg/hazard.svg"
     }
   ];
 
@@ -773,9 +779,54 @@ actor?.sheet.render(true);`,
     await upsertMacro(mDef, macroFolder);
   }
 
+  // Remove obsolete / replaced macros from previous sessions
+  await cleanupObsoleteMacros();
+
   // Update installed version tracking
-  await game.settings.set(S5_MODULE_ID, "session5InstalledVer", 3);
-  ui.notifications.info("Session 5 content (3 Scenes, 3 Journals, 10 Curated Macros, Populated Battlemaps) updated and ready!");
+  await game.settings.set(S5_MODULE_ID, "session5InstalledVer", 4);
+  ui.notifications.info("Session 5 content (3 Scenes, 3 Journals, Curated Macros, Cleaned World) updated and ready!");
+}
+
+async function cleanupObsoleteMacros() {
+  if (!game.user?.isGM) return;
+
+  const obsoleteNames = new Set([
+    "Install / Refresh Edited Session 1",
+    "Open The Margin",
+    "Bus Opening",
+    "Crash Flash",
+    "Enter The Fates",
+    "Start Satyn Battle",
+    "Stop Satyn Battle",
+    "Naomi Briefing",
+    "Roll Lost Roads",
+    "Campfire Downtime",
+    "The Edited Roster",
+    "The Edited",
+    "+1 Legend",
+    "-1 Legend",
+    "Reset Legend",
+    "Toggle Legend HUD",
+    "Install / Refresh Campaign Actors",
+    "Apply Targeted Session 1 Fixes",
+    "Museum Countdown — Advance 6 Seconds",
+    "Museum Countdown — Reset",
+    "Refresh Monster Sheets — No PCs"
+  ]);
+
+  const toDelete = game.macros.filter(m => obsoleteNames.has(m.name)).map(m => m.id);
+  if (toDelete.length) {
+    await Macro.deleteDocuments(toDelete);
+    console.log(`Edited Campaign Tools: Cleaned up ${toDelete.length} obsolete/replaced macros.`);
+  }
+
+  // Clean empty legacy folders
+  for (const fName of ["Edited — Macros", "Edited — Museum"]) {
+    const f = game.folders.find(fold => fold.type === "Macro" && fold.name === fName);
+    if (f && f.contents.length === 0) {
+      await f.delete();
+    }
+  }
 }
 
 async function setupSession5Hotbar(page = 1) {

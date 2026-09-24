@@ -2,10 +2,10 @@
   "id": "edited-campaign-tools",
   "title": "Edited Campaign Tools",
   "description": "Foundry VTT campaign toolkit for The Margin: Session 5 campus scenes, book tour flyer handout, GM matrix, canonical birthrights, automated hotbar, Legend HUD, and audio cues.",
-  "version": "1.1.12",
+  "version": "1.1.13",
   "url": "https://github.com/lukegforeman/edited-campaign-tools",
   "manifest": "https://raw.githubusercontent.com/lukegforeman/edited-campaign-tools/main/module.json",
-  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.12/Edited_Campaign_Tools_Module_v1.1.12.zip",
+  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.13/Edited_Campaign_Tools_Module_v1.1.13.zip",
   "authors": [
     {
       "name": "Campaign GM + Luke Foreman"
@@ -36,7 +36,8 @@
     "scripts/session1-installer.js",
     "scripts/session1-fixes.js",
     "scripts/session5-installer.js",
-    "scripts/combat-qol.js"
+    "scripts/combat-qol.js",
+    "scripts/relic-installer.js"
   ],
   "styles": [
     "styles/edited-tools.css"
@@ -47,6 +48,17 @@
       "label": "Session 5 Handouts & Journals",
       "path": "packs/session5-journals",
       "type": "JournalEntry",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "pc-relics-items",
+      "label": "PC Birthrights & Campaign Relics",
+      "path": "packs/pc-relics-items",
+      "type": "Item",
       "system": "dnd5e",
       "ownership": {
         "PLAYER": "OBSERVER",

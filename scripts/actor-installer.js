@@ -771,9 +771,44 @@ export async function installCampaignActors() {
   return results;
 }
 
+export async function condenseMonsterActors() {
+  if (!game.user?.isGM) return;
+  const canonicalNames = new Set(monsterActors().map(m => m.name));
+  canonicalNames.add("Campus Bystander");
+
+  const monsterFolder = game.folders.find(f => f.type === "Actor" && f.name === "Edited — Monsters");
+  const toDelete = [];
+
+  for (const actor of game.actors) {
+    if (actor.type !== "npc") continue;
+    // Protect friendly campaign NPCs and PCs
+    const isCampaignNpc = ["Naomi", "Michael", "Anna Smith", "Rosa", "Frank", "Lilly Carter", "Theodore Finch", "The Fates"].includes(actor.name);
+    if (isCampaignNpc) continue;
+
+    const inMonsterFolder = monsterFolder && actor.folder?.id === monsterFolder.id;
+    const isLegacyName = [
+      "Satyn Rift (Placeable)", "Gorgon", "Harpy", "Satyr", "Hydra", "Medusa", "Minotaur",
+      "Monster", "Minion", "Satyn Rift"
+    ].includes(actor.name);
+
+    if (inMonsterFolder && !canonicalNames.has(actor.name)) {
+      toDelete.push(actor);
+    } else if (isLegacyName && !canonicalNames.has(actor.name)) {
+      toDelete.push(actor);
+    }
+  }
+
+  if (toDelete.length) {
+    console.log(`Edited Campaign Tools: Cleaning up ${toDelete.length} legacy/unclickable monster sheets:`, toDelete.map(a => a.name));
+    await Actor.deleteDocuments(toDelete.map(a => a.id));
+  }
+}
+
 export async function refreshMonsterActors() {
   if (!game.user?.isGM) return ui.notifications.warn("Only a GM can refresh monster Actors.");
   if (game.system.id !== "dnd5e") return ui.notifications.error("This installer requires the D&D5e system.");
+
+  await condenseMonsterActors();
 
   const monsterFolder = await ensureFolder("Edited — Monsters");
   const results = [];
@@ -783,10 +818,13 @@ export async function refreshMonsterActors() {
   const created = results.filter(result => result.status === "created").length;
   const updated = results.filter(result => result.status === "updated").length;
   const skipped = results.filter(result => result.status === "skipped").length;
-  ui.notifications.info(`Monster sheets ready: ${created} created, ${updated} refreshed, ${skipped} skipped. Player-character sheets were not touched.`);
+  ui.notifications.info(`Monster sheets condensed and updated: ${created} created, ${updated} refreshed. Unclickable/legacy sheets removed.`);
   return results;
 }
 
-Hooks.once("ready", () => {
-  globalThis.EditedCampaignActors = {installCampaignActors, refreshMonsterActors};
+Hooks.once("ready", async () => {
+  globalThis.EditedCampaignActors = {installCampaignActors, refreshMonsterActors, condenseMonsterActors};
+  if (game.user?.isGM) {
+    await condenseMonsterActors();
+  }
 });
