@@ -32,7 +32,7 @@ Hooks.once("ready", async () => {
 
   if (game.user.isGM) {
     const installed = Number(game.settings.get(S5_MODULE_ID, "session5InstalledVer")) || 0;
-    if (installed < 4) {
+    if (installed < 5) {
       console.log("Installing/Updating Session 5 content (scenes, journals, macros, tokens, item compendium)...");
       await installSession5();
     }
@@ -191,7 +191,7 @@ async function ensureS5BystanderActor() {
         name: "Campus Bystander",
         actorLink: false,
         disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-        displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
         displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
         bar1: { attribute: "attributes.hp" },
         width: 1,
@@ -242,7 +242,7 @@ async function populateQuadScene(scene, bystanderActor) {
     height: 1,
     rotation: Math.floor(Math.random() * 360),
     disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
     displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
     bar1: { attribute: "attributes.hp" },
     texture: {
@@ -300,7 +300,7 @@ async function populateAuditoriumScene(scene, bystanderActor) {
     width: 1,
     height: 1,
     disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
     displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
     bar1: { attribute: "attributes.hp" },
     texture: {
@@ -326,7 +326,7 @@ async function populateAuditoriumScene(scene, bystanderActor) {
     width: 0.85,
     height: 0.85,
     disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
     displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
     bar1: { attribute: "attributes.hp" },
     texture: {
@@ -363,7 +363,7 @@ async function populateAuditoriumScene(scene, bystanderActor) {
         width: 0.8,
         height: 0.8,
         disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-        displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
         displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
         bar1: { attribute: "attributes.hp" },
         texture: {
@@ -721,10 +721,11 @@ let tokens = canvas.tokens.controlled.length > 0
 for (const token of tokens) {
   if (actor) {
     await token.document.update({
-      name: actor.name,
-      "delta.name": actor.name,
+      name: "???",
+      "delta.name": "???",
       texture: { src: "modules/edited-campaign-tools/assets/art/actors/medulas/medulas-token.webp" },
       disposition: CONST.TOKEN_DISPOSITIONS.HOSTILE,
+      displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
       hidden: false
     });
   }
@@ -733,7 +734,7 @@ ChatMessage.create({
   speaker: { alias: "Narrator" },
   content: \`<div style="border-left: 3px solid #722ed1; padding: 0.6rem; background: #1a162b; color: #f0f0f0; font-family: 'Inter', sans-serif;">
     <h3 style="margin: 0; color: #b37feb; font-size: 1.1rem;">👁️ THE REVELATION</h3>
-    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The academic reviewer in the second row rises. Microscopic copper serpents and living editorial ink hiss beneath her scarf as the <strong>Medula</strong> fixes her petrifying gaze upon the auditorium!</p>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The academic reviewer in the second row rises. Microscopic copper serpents and living editorial ink hiss beneath her scarf as the <strong>???</strong> fixes an unblinking, petrifying gaze upon the auditorium!</p>
   </div>\`
 });
 actor?.sheet.render(true);`,
@@ -749,10 +750,11 @@ let tokens = canvas.tokens.controlled.length > 0
 for (const token of tokens) {
   if (actor) {
     await token.document.update({
-      name: actor.name,
-      "delta.name": actor.name,
+      name: "???",
+      "delta.name": "???",
       texture: { src: "modules/edited-campaign-tools/assets/art/actors/satyn/satyn-token.webp" },
       disposition: CONST.TOKEN_DISPOSITIONS.HOSTILE,
+      displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
       hidden: false
     });
   }
@@ -761,7 +763,7 @@ ChatMessage.create({
   speaker: { alias: "Narrator" },
   content: \`<div style="border-left: 3px solid #ff4d4f; padding: 0.6rem; background: #261215; color: #f0f0f0; font-family: 'Inter', sans-serif;">
     <h3 style="margin: 0; color: #ff7875; font-size: 1.1rem;">🐐 INKY RIFT</h3>
-    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The campus security guards slam the heavy auditorium doors shut. Horns curl outward through their caps as viscous black ink spills across their hooves—the <strong>Satyns</strong> reveal their true forms!</p>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The campus security guards slam the heavy auditorium doors shut. Horns curl outward through their caps as viscous black ink spills across their hooves—the <strong>???</strong> reveal their true forms!</p>
   </div>\`
 });
 actor?.sheet.render(true);`,
@@ -787,7 +789,7 @@ actor?.sheet.render(true);`,
   await cleanupObsoleteMacros();
 
   // Update installed version tracking
-  await game.settings.set(S5_MODULE_ID, "session5InstalledVer", 4);
+  await game.settings.set(S5_MODULE_ID, "session5InstalledVer", 5);
   ui.notifications.info("Session 5 content (3 Scenes, 3 Journals, Curated Macros, Cleaned World) updated and ready!");
 }
 

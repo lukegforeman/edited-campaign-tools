@@ -173,13 +173,13 @@ function npc({name, img, token, ac, hp, cr, speed, fly, swim, climb, abilities, 
     img,
     system,
     prototypeToken: {
-      name,
+      name: "???",
       texture: {src: token, scaleX: tokenScale, scaleY: tokenScale},
       width: size,
       height: size,
       disposition,
       actorLink,
-      displayName: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
+      displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
       displayBars: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
       bar1: {attribute: "attributes.hp"},
       sight: {enabled: true, range: 60, visionMode: "basic"}
@@ -795,8 +795,12 @@ export async function condenseMonsterActors() {
       toDelete.push(actor);
     } else if (isLegacyName && !canonicalNames.has(actor.name)) {
       toDelete.push(actor);
-    } else if (inMonsterFolder && actor.ownership.default !== CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE) {
-      await actor.update({ "ownership.default": CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE });
+    } else if (inMonsterFolder) {
+      const updates = {};
+      if (actor.ownership.default !== CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE) updates["ownership.default"] = CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+      if (actor.prototypeToken?.name !== "???") updates["prototypeToken.name"] = "???";
+      if (actor.prototypeToken?.displayName !== CONST.TOKEN_DISPLAY_MODES.NONE) updates["prototypeToken.displayName"] = CONST.TOKEN_DISPLAY_MODES.NONE;
+      if (Object.keys(updates).length) await actor.update(updates);
     }
   }
 

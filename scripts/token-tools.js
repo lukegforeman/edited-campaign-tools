@@ -125,10 +125,12 @@ async function toggleMonster(key) {
 
   const allMonsters = targets.every(token => token.document.texture?.src === transformation.monster);
   const monsterForm = !allMonsters;
-  const targetSrc = monsterForm ? transformation.monster : transformation.normal;
   const updates = targets.map(token => ({
     _id: token.document.id,
     "texture.src": targetSrc,
+    name: monsterForm ? "???" : token.document.name,
+    "delta.name": monsterForm ? "???" : (token.document.delta?.name ?? token.document.name),
+    displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
     [`flags.${TOKEN_MODULE_ID}.transformationKey`]: transformation.key,
     [`flags.${TOKEN_MODULE_ID}.monsterForm`]: monsterForm
   }));
@@ -248,7 +250,7 @@ async function ensureBystanderActor() {
         name: "Campus Bystander",
         actorLink: false,
         disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-        displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
         displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
         bar1: { attribute: "attributes.hp" },
         width: 1,
@@ -318,7 +320,7 @@ async function crowdBuilder() {
     level,
     rotation: Math.round(Math.random() * 360),
     disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
     displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
     bar1: { attribute: "attributes.hp" },
     texture: {

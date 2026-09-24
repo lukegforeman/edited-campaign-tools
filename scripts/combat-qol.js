@@ -1,5 +1,31 @@
 const QOL_MODULE_ID = "edited-campaign-tools";
 
+export function isMonsterActor(actor) {
+  if (!actor || actor.type !== "npc") return false;
+  if (actor.hasPlayerOwner) return false;
+  const campaignFriendlyNpcs = [
+    "Naomi", "Michael", "Anna Smith", "Rosa", "Frank",
+    "Lilly Carter", "Theodore Finch", "The Fates", "Campus Bystander"
+  ];
+  if (campaignFriendlyNpcs.includes(actor.name)) return false;
+  if (actor.folder?.name?.includes("Monsters")) return true;
+  if (actor.name === "???" || actor.prototypeToken?.name === "???") return true;
+  if (actor.getFlag?.(QOL_MODULE_ID, "monsterForm") || actor.getFlag?.(QOL_MODULE_ID, "transformationKey")) return true;
+  const monsterKeyWords = [
+    "Gordon", "Harps", "Satyn", "Medulas", "Hydrant",
+    "Minowtaur", "Redactor", "Scribe", "Final Draft Pen",
+    "Gorgon", "Harpy", "Medusa", "Satyr", "Hydra", "Minotaur"
+  ];
+  return monsterKeyWords.some(kw => actor.name.includes(kw));
+}
+
+export function maskMonsterText(text) {
+  if (!text || typeof text !== "string") return text;
+  const pattern = /\b(Medulas?|Satyns?|Gordons?|Harps|Hydrants?|Minowtaurs?|The\s+Redactor|The\s+Scribe|The\s+Final\s+Draft\s+Pen)(\s*\([^)]*\))?/gi;
+  const secondary = /\b(Edited\s+(?:Medusa|Satyr|Gorgon|Harpy|Hydra|Minotaur))\b/gi;
+  return text.replace(pattern, "???").replace(secondary, "???");
+}
+
 Hooks.once("init", () => {
   game.settings.register(QOL_MODULE_ID, "npcAutoRollAttack", {
     name: "NPC Auto-Roll Attack",
@@ -93,7 +119,119 @@ Hooks.once("ready", async () => {
     }
   });
 
+  // 3. World Token Sweep: Suppress hover names on all audience & bystanders, mask NPC monsters to ???
+  if (game.user.isGM) {
+    for (const scene of game.scenes) {
+      const tokenUpdates = [];
+      for (const token of scene.tokens) {
+        const actor = token.actor;
+        const isMonster = actor && isMonsterActor(actor);
+        const isAudienceOrBystander = actor?.name === "Campus Bystander"
+          || token.name === "Campus Bystander"
+          || token.name === "Audience Member"
+          || token.name.includes("Student")
+          || token.name.includes("Professor")
+          || token.getFlag(QOL_MODULE_ID, "seatBystander")
+          || token.getFlag(QOL_MODULE_ID, "quadBystander");
+
+        if (isMonster) {
+          const update = { _id: token.id };
+          let changed = false;
+          if (token.displayName !== CONST.TOKEN_DISPLAY_MODES.NONE) {
+            update.displayName = CONST.TOKEN_DISPLAY_MODES.NONE;
+            changed = true;
+          }
+          if (token.name.includes("Medula") || token.name.includes("Satyn") || token.name.includes("Gordon") || token.name.includes("Harps")) {
+            update.name = "???";
+            update["delta.name"] = "???";
+            changed = true;
+          }
+          if (changed) tokenUpdates.push(update);
+        } else if (isAudienceOrBystander) {
+          if (token.displayName !== CONST.TOKEN_DISPLAY_MODES.NONE) {
+            tokenUpdates.push({
+              _id: token.id,
+              displayName: CONST.TOKEN_DISPLAY_MODES.NONE
+            });
+          }
+        }
+      }
+      if (tokenUpdates.length) {
+        await scene.updateEmbeddedDocuments("Token", tokenUpdates);
+      }
+    }
+  }
+
   console.log("Edited Campaign Tools: Combat QOL & Automation active.");
+});
+
+// Hook: preCreateChatMessage — Guarantee monster rolls always use ??? speaker and sanitized text
+Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
+  let isMonster = false;
+  let actor = null;
+
+  if (message.speaker?.actor) {
+    actor = game.actors.get(message.speaker.actor);
+  }
+  if (!actor && canvas?.ready && message.speaker?.token) {
+    const token = canvas.tokens.get(message.speaker.token);
+    actor = token?.actor;
+  }
+
+  if (actor && isMonsterActor(actor)) {
+    isMonster = true;
+  } else if (message.speaker?.alias && maskMonsterText(message.speaker.alias) !== message.speaker.alias) {
+    isMonster = true;
+  }
+
+  if (isMonster) {
+    message.updateSource({ "speaker.alias": "???" });
+  }
+
+  // Sanitize content and flavor
+  const content = message.content;
+  if (content && typeof content === "string") {
+    const maskedContent = maskMonsterText(content);
+    if (maskedContent !== content) {
+      message.updateSource({ content: maskedContent });
+    }
+  }
+  const flavor = message.flavor;
+  if (flavor && typeof flavor === "string") {
+    const maskedFlavor = maskMonsterText(flavor);
+    if (maskedFlavor !== flavor) {
+      message.updateSource({ flavor: maskedFlavor });
+    }
+  }
+});
+
+// Hook: preCreateCombatant — Ensure monsters in combat tracker are named ???
+Hooks.on("preCreateCombatant", (combatant, data, options, userId) => {
+  const actor = combatant.actor;
+  if (actor && isMonsterActor(actor)) {
+    combatant.updateSource({ name: "???" });
+  }
+});
+
+// Hook: preCreateToken — Suppress hover names on all bystanders/audience and mask monsters
+Hooks.on("preCreateToken", (tokenDoc, data, options, userId) => {
+  const actor = tokenDoc.actor;
+  if (actor && isMonsterActor(actor)) {
+    tokenDoc.updateSource({
+      name: "???",
+      displayName: CONST.TOKEN_DISPLAY_MODES.NONE
+    });
+  } else if (
+    actor?.name === "Campus Bystander"
+    || tokenDoc.name === "Audience Member"
+    || tokenDoc.name === "Campus Bystander"
+    || tokenDoc.getFlag?.(QOL_MODULE_ID, "seatBystander")
+    || tokenDoc.getFlag?.(QOL_MODULE_ID, "quadBystander")
+  ) {
+    tokenDoc.updateSource({
+      displayName: CONST.TOKEN_DISPLAY_MODES.NONE
+    });
+  }
 });
 
 // Cache recently made attack rolls to correlate with damage
@@ -202,18 +340,18 @@ Hooks.on("dnd5e.rollDamage", async (itemOrActivity, roll, options) => {
       });
     }
 
-    // Chat notification
+    // Chat notification whispered to GM
     ChatMessage.create({
       whisper: ChatMessage.getWhisperRecipients("GM"),
       speaker: { alias: "Combat Automation" },
       content: `<div style="border-left: 3px solid #ff4d4f; padding: 0.5rem; background: #1a0d0d; color: #ffccc7; font-size: 0.9rem;">
-        <strong>💥 Damage Applied:</strong> <code>${target.name}</code> took <strong>${totalDamage}</strong> damage from <code>${actor.name}</code>!
+        <strong>💥 Damage Applied:</strong> <code>${target.name}</code> took <strong>${totalDamage}</strong> damage from <code>${isMonsterActor(actor) ? "???" : actor.name}</code>!
       </div>`
     });
   }
 });
 
-// Hook: Activity or item use requiring saving throw -> Prompt PC
+// Hook: Activity or item use requiring saving throw -> Prompt PC with masked attacker
 Hooks.on("dnd5e.postUseActivity", async (activity, usage, results) => {
   if (!game.settings.get(QOL_MODULE_ID, "pcPromptSaves")) return;
   const actor = activity.actor;
@@ -236,15 +374,17 @@ Hooks.on("dnd5e.postUseActivity", async (activity, usage, results) => {
 
     const attackerToken = canvas.tokens.placeables.find(t => t.actor?.id === actor.id && t.controlled)
       ?? canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
-    const attackerName = attackerToken?.name ?? actor.name;
-    const effectName = activity.name || attackerName;
+    const isMonster = isMonsterActor(actor);
+    const attackerName = isMonster ? "???" : (attackerToken?.name ?? actor.name);
+    const rawEffect = activity.name || (isMonster ? "Special Ability" : attackerName);
+    const effectName = maskMonsterText(rawEffect);
 
     ChatMessage.create({
       speaker: { alias: "Saving Throw Required" },
       content: `<div style="border: 2px solid #faad14; border-radius: 6px; padding: 0.8rem; background: #2b2111; color: #fffbe6; font-family: 'Inter', sans-serif;">
         <h4 style="margin: 0 0 0.4rem 0; color: #ffe58f; font-size: 1rem;">⚠️ ${recipientNames}: Saving Throw Required!</h4>
         <p style="margin: 0 0 0.6rem 0; font-size: 0.95rem; line-height: 1.4;">
-          <strong>${target.name}</strong> must make a <strong>DC ${dc} ${ability.toUpperCase()}</strong> saving throw against <em>${effectName}</em>!
+          <strong>${target.name}</strong> must make a <strong>DC ${dc} ${ability.toUpperCase()}</strong> saving throw against <em>${effectName}</em> from <strong>${attackerName}</strong>!
         </p>
         <button class="edited-save-prompt-btn" data-actor-id="${targetActor.id}" data-ability="${ability}" data-dc="${dc}" style="background: #d48806; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%;">
           🎲 Roll ${ability.toUpperCase()} Save (DC ${dc})
