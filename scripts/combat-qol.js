@@ -234,12 +234,17 @@ Hooks.on("dnd5e.postUseActivity", async (activity, usage, results) => {
     const owners = game.users.filter(u => !u.isGM && targetActor.testUserPermission(u, "OWNER"));
     const recipientNames = owners.map(u => u.name).join(", ") || "Player";
 
+    const attackerToken = canvas.tokens.placeables.find(t => t.actor?.id === actor.id && t.controlled)
+      ?? canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
+    const attackerName = attackerToken?.name ?? actor.name;
+    const effectName = activity.name || attackerName;
+
     ChatMessage.create({
       speaker: { alias: "Saving Throw Required" },
       content: `<div style="border: 2px solid #faad14; border-radius: 6px; padding: 0.8rem; background: #2b2111; color: #fffbe6; font-family: 'Inter', sans-serif;">
         <h4 style="margin: 0 0 0.4rem 0; color: #ffe58f; font-size: 1rem;">⚠️ ${recipientNames}: Saving Throw Required!</h4>
         <p style="margin: 0 0 0.6rem 0; font-size: 0.95rem; line-height: 1.4;">
-          <strong>${target.name}</strong> must make a <strong>DC ${dc} ${ability.toUpperCase()}</strong> saving throw against <em>${activity.name || actor.name}</em>!
+          <strong>${target.name}</strong> must make a <strong>DC ${dc} ${ability.toUpperCase()}</strong> saving throw against <em>${effectName}</em>!
         </p>
         <button class="edited-save-prompt-btn" data-actor-id="${targetActor.id}" data-ability="${ability}" data-dc="${dc}" style="background: #d48806; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%;">
           🎲 Roll ${ability.toUpperCase()} Save (DC ${dc})

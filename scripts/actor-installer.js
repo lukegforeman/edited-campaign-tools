@@ -184,7 +184,7 @@ function npc({name, img, token, ac, hp, cr, speed, fly, swim, climb, abilities, 
       bar1: {attribute: "attributes.hp"},
       sight: {enabled: true, range: 60, visionMode: "basic"}
     },
-    ownership: {default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED},
+    ownership: {default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE},
     items,
     flags: generatedFlags("actor")
   };
@@ -795,6 +795,8 @@ export async function condenseMonsterActors() {
       toDelete.push(actor);
     } else if (isLegacyName && !canonicalNames.has(actor.name)) {
       toDelete.push(actor);
+    } else if (inMonsterFolder && actor.ownership.default !== CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE) {
+      await actor.update({ "ownership.default": CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE });
     }
   }
 

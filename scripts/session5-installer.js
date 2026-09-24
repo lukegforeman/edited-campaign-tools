@@ -294,6 +294,7 @@ async function populateAuditoriumScene(scene, bystanderActor) {
     name: "Campus Security Guard",
     actorId: satynActor?.id ?? null,
     actorLink: false,
+    delta: { name: "Campus Security Guard" },
     x: pos.x - 50,
     y: pos.y - 50,
     width: 1,
@@ -319,6 +320,7 @@ async function populateAuditoriumScene(scene, bystanderActor) {
     name: "Academic Reviewer",
     actorId: medulaActor?.id ?? null,
     actorLink: false,
+    delta: { name: "Academic Reviewer" },
     x: 880 - 40,
     y: 330 - 40,
     width: 0.85,
@@ -720,6 +722,7 @@ for (const token of tokens) {
   if (actor) {
     await token.document.update({
       name: actor.name,
+      "delta.name": actor.name,
       texture: { src: "modules/edited-campaign-tools/assets/art/actors/medulas/medulas-token.webp" },
       disposition: CONST.TOKEN_DISPOSITIONS.HOSTILE,
       hidden: false
@@ -747,6 +750,7 @@ for (const token of tokens) {
   if (actor) {
     await token.document.update({
       name: actor.name,
+      "delta.name": actor.name,
       texture: { src: "modules/edited-campaign-tools/assets/art/actors/satyn/satyn-token.webp" },
       disposition: CONST.TOKEN_DISPOSITIONS.HOSTILE,
       hidden: false
