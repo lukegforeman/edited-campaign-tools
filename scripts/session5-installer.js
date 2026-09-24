@@ -1,6 +1,17 @@
-﻿const S5_MODULE_ID = "edited-campaign-tools";
+const S5_MODULE_ID = "edited-campaign-tools";
 const S5_PATH = `modules/${S5_MODULE_ID}`;
 const S5_FLAG = "session5Installer";
+
+const S5_BYSTANDER_IMAGES = [
+  `${S5_PATH}/assets/art/tokens/bystanders/bystander-05.webp`,
+  `${S5_PATH}/assets/art/tokens/bystanders/bystander-06.webp`,
+  `${S5_PATH}/assets/art/tokens/bystanders/bystander-07.webp`,
+  `${S5_PATH}/assets/art/tokens/bystanders/bystander-08.webp`,
+  `${S5_PATH}/assets/art/tiles/museum-extras/museum-goer-01.webp`,
+  `${S5_PATH}/assets/art/tiles/museum-extras/museum-goer-02.webp`,
+  `${S5_PATH}/assets/art/tiles/museum-extras/museum-guard-01.webp`,
+  `${S5_PATH}/assets/art/tiles/museum-extras/museum-guard-02.webp`
+];
 
 Hooks.once("init", () => {
   game.settings.register(S5_MODULE_ID, "session5InstalledVer", {
@@ -20,8 +31,8 @@ Hooks.once("ready", async () => {
 
   if (game.user.isGM) {
     const installed = Number(game.settings.get(S5_MODULE_ID, "session5InstalledVer")) || 0;
-    if (installed < 2) {
-      console.log("Installing/Updating Session 5 content (scenes, journals, macros)...");
+    if (installed < 3) {
+      console.log("Installing/Updating Session 5 content (scenes, journals, macros, tokens)...");
       await installSession5();
     }
   }
@@ -59,6 +70,7 @@ async function upsertScene(sceneDef, folder) {
     sort: 0
   };
 
+  // Default to GRIDLESS (type: 0), no snapping, distance 5 ft, NO FOG
   const scenePayload = {
     name: sceneDef.name,
     folder: folder.id,
@@ -66,9 +78,9 @@ async function upsertScene(sceneDef, folder) {
     width: sceneDef.width,
     height: sceneDef.height,
     padding: 0,
-    grid: { size: 100, type: 1, distance: 5, units: "ft" },
-    tokenVision: sceneDef.tokenVision ?? true,
-    fog: { exploration: sceneDef.fog ?? true },
+    grid: { size: 100, type: 0, distance: 5, units: "ft" },
+    tokenVision: false,
+    fog: { exploration: false },
     darkness: 0,
     globalLight: true,
     flags: { [S5_MODULE_ID]: { [S5_FLAG]: true } }
@@ -143,11 +155,233 @@ async function upsertMacro(mDef, folder) {
   return Macro.create(data);
 }
 
+async function ensureS5BystanderActor() {
+  let actor = game.actors.getName("Campus Bystander");
+  if (!actor) {
+    const folder = game.folders.find(f => f.type === "Actor" && f.name.includes("NPC"))
+      ?? await Folder.create({ name: "Edited — NPCs", type: "Actor", sorting: "a" });
+    actor = await Actor.create({
+      name: "Campus Bystander",
+      type: "npc",
+      img: `${S5_PATH}/assets/art/tokens/bystanders/bystander-05.webp`,
+      folder: folder.id,
+      system: {
+        attributes: {
+          hp: { value: 6, max: 6, temp: 0, formula: "1d8 + 1" },
+          ac: { flat: 10, calc: "flat" },
+          movement: { walk: 30, units: "ft" }
+        },
+        abilities: {
+          str: { value: 10 },
+          dex: { value: 10 },
+          con: { value: 10 },
+          int: { value: 10 },
+          wis: { value: 10 },
+          cha: { value: 10 }
+        },
+        details: {
+          cr: 0,
+          type: { value: "humanoid", subtype: "human" },
+          alignment: "Neutral",
+          biography: { value: "<p>An ordinary university student or faculty bystander on campus. Can be targeted, damaged, or healed.</p>" }
+        }
+      },
+      prototypeToken: {
+        name: "Campus Bystander",
+        actorLink: false,
+        disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
+        displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        bar1: { attribute: "attributes.hp" },
+        width: 1,
+        height: 1,
+        texture: {
+          src: `${S5_PATH}/assets/art/tokens/bystanders/bystander-05.webp`,
+          scaleX: 0.92,
+          scaleY: 0.92
+        }
+      }
+    });
+  }
+  return actor;
+}
+
+async function populateQuadScene(scene, bystanderActor) {
+  const oldTokens = scene.tokens.filter(t => t.getFlag(S5_MODULE_ID, "s5Generated")).map(t => t.id);
+  if (oldTokens.length) await scene.deleteEmbeddedDocuments("Token", oldTokens);
+
+  const quadCoords = [
+    { x: 220, y: 280, role: "Professor" },
+    { x: 310, y: 220, role: "Undergraduate Student" },
+    { x: 380, y: 350, role: "Graduate Student" },
+    { x: 290, y: 520, role: "Student" },
+    { x: 450, y: 490, role: "Research Assistant" },
+    { x: 520, y: 230, role: "Student" },
+    { x: 580, y: 360, role: "Professor" },
+    { x: 640, y: 210, role: "Graduate Student" },
+    { x: 690, y: 470, role: "Undergraduate Student" },
+    { x: 750, y: 320, role: "Campus Bystander" },
+    { x: 830, y: 220, role: "Research Fellow" },
+    { x: 880, y: 450, role: "Student" },
+    { x: 950, y: 310, role: "Professor" },
+    { x: 1020, y: 240, role: "Graduate Student" },
+    { x: 1060, y: 480, role: "Student" },
+    { x: 1140, y: 360, role: "Campus Bystander" },
+    { x: 1180, y: 220, role: "Visiting Academic" },
+    { x: 1220, y: 500, role: "Student" }
+  ];
+
+  const tokens = quadCoords.map((coord, idx) => ({
+    name: coord.role,
+    actorId: bystanderActor.id,
+    actorLink: false,
+    x: coord.x - 50,
+    y: coord.y - 50,
+    width: 1,
+    height: 1,
+    rotation: Math.floor(Math.random() * 360),
+    disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
+    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    bar1: { attribute: "attributes.hp" },
+    texture: {
+      src: S5_BYSTANDER_IMAGES[idx % S5_BYSTANDER_IMAGES.length],
+      scaleX: 0.92,
+      scaleY: 0.92
+    },
+    flags: { [S5_MODULE_ID]: { s5Generated: true, quadBystander: true } }
+  }));
+
+  await scene.createEmbeddedDocuments("Token", tokens);
+}
+
+async function populateAuditoriumScene(scene, bystanderActor) {
+  // Clear previous generated tokens and walls
+  const oldTokens = scene.tokens.filter(t => t.getFlag(S5_MODULE_ID, "s5Generated")).map(t => t.id);
+  if (oldTokens.length) await scene.deleteEmbeddedDocuments("Token", oldTokens);
+
+  const oldWalls = scene.walls.filter(w => w.getFlag(S5_MODULE_ID, "s5Generated")).map(w => w.id);
+  if (oldWalls.length) await scene.deleteEmbeddedDocuments("Wall", oldWalls);
+
+  // 1. WALLS: Block all exits except 2 in back and 1 in front
+  // Allowed Exits:
+  // - Front Stage Exit: left door near (235, 90)
+  // - Back Double Doors: bottom center near (688, 715)
+  // - Back Exit Stairs: bottom right near (1210, 685)
+  // Blocked extra exits (solid movement barriers):
+  const wallDefs = [
+    { c: [1110, 60, 1190, 60], move: 20, sense: 20 },
+    { c: [110, 390, 110, 470], move: 20, sense: 20 },
+    { c: [1260, 390, 1260, 470], move: 20, sense: 20 }
+  ];
+  await scene.createEmbeddedDocuments("Wall", wallDefs.map(w => ({
+    c: w.c,
+    move: w.move,
+    sense: w.sense,
+    door: 0,
+    flags: { [S5_MODULE_ID]: { s5Generated: true } }
+  })));
+
+  // 2. DISGUISED SATYNS at EVERY exit (3 total)
+  const satynActor = game.actors.getName("Satyn (Edited Satyr)") ?? game.actors.find(a => a.name.includes("Satyn"));
+  const satynPositions = [
+    { x: 235, y: 90, label: "Front Stage Door Guard" },
+    { x: 688, y: 690, label: "Main Entrance Guard" },
+    { x: 1210, y: 660, label: "Stairwell Exit Guard" }
+  ];
+  const satynTokens = satynPositions.map(pos => ({
+    name: "Campus Security Guard",
+    actorId: satynActor?.id ?? null,
+    actorLink: false,
+    x: pos.x - 50,
+    y: pos.y - 50,
+    width: 1,
+    height: 1,
+    disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
+    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    bar1: { attribute: "attributes.hp" },
+    texture: {
+      src: `${S5_PATH}/assets/art/actors/satyn/satyn-token-normal.webp`,
+      scaleX: 0.95,
+      scaleY: 0.95
+    },
+    flags: {
+      [S5_MODULE_ID]: { s5Generated: true, isDisguisedSatyn: true },
+      "edited-campaign-tools": { transformationKey: "satyn" }
+    }
+  }));
+
+  // 3. DISGUISED MEDULA in the second row
+  const medulaActor = game.actors.getName("Medulas (Edited Medusa)") ?? game.actors.find(a => a.name.includes("Medula"));
+  const medulaToken = {
+    name: "Academic Reviewer",
+    actorId: medulaActor?.id ?? null,
+    actorLink: false,
+    x: 880 - 40,
+    y: 330 - 40,
+    width: 0.85,
+    height: 0.85,
+    disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
+    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    bar1: { attribute: "attributes.hp" },
+    texture: {
+      src: `${S5_PATH}/assets/art/actors/medulas/medulas-token-normal.webp`,
+      scaleX: 0.9,
+      scaleY: 0.9
+    },
+    flags: {
+      [S5_MODULE_ID]: { s5Generated: true, isDisguisedMedula: true },
+      "edited-campaign-tools": { transformationKey: "medulas" }
+    }
+  };
+
+  // 4. ONE ACADEMIC BYSTANDER IN EACH SEAT
+  const seatTiers = [
+    { y: 265, xs: [440, 520, 600, 680, 760, 840, 920] },
+    { y: 330, xs: [390, 460, 530, 600, 670, 740, 810, 950, 1020] }, // 880 is Medula
+    { y: 410, xs: [350, 420, 490, 560, 630, 700, 770, 840, 910, 980, 1050] },
+    { y: 490, xs: [310, 380, 450, 520, 590, 660, 730, 800, 870, 940, 1010, 1080] },
+    { y: 570, xs: [280, 350, 420, 490, 560, 630, 700, 770, 840, 910, 980, 1050, 1120] },
+    { y: 650, xs: [320, 390, 460, 530, 600, 760, 830, 900, 970, 1040, 1110] }
+  ];
+
+  let seatIdx = 0;
+  const bystanderSeatTokens = [];
+  for (const tier of seatTiers) {
+    for (const x of tier.xs) {
+      bystanderSeatTokens.push({
+        name: "Audience Member",
+        actorId: bystanderActor.id,
+        actorLink: false,
+        x: x - 40,
+        y: tier.y - 40,
+        width: 0.8,
+        height: 0.8,
+        disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
+        displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        bar1: { attribute: "attributes.hp" },
+        texture: {
+          src: S5_BYSTANDER_IMAGES[seatIdx % S5_BYSTANDER_IMAGES.length],
+          scaleX: 0.85,
+          scaleY: 0.85
+        },
+        flags: { [S5_MODULE_ID]: { s5Generated: true, seatBystander: true } }
+      });
+      seatIdx++;
+    }
+  }
+
+  await scene.createEmbeddedDocuments("Token", [medulaToken, ...satynTokens, ...bystanderSeatTokens]);
+}
+
 async function installSession5() {
   if (!game.user.isGM) return ui.notifications.warn("Only the GM can install Session 5 content.");
-  ui.notifications.info("Setting up Session 5 scenes, journals, and macros...");
+  ui.notifications.info("Setting up Session 5 scenes, journals, macros, and tokens...");
 
-  // 1. SCENES (Exact image dimensions: 1376 x 768, padding: 0)
+  // 1. SCENES (Exact image dimensions: 1376 x 768, padding: 0, gridless, no fog)
   const sceneFolder = await ensureFolder("Edited — Session 5 Scenes", "Scene");
   
   const sceneDefinitions = [
@@ -164,22 +398,30 @@ async function installSession5() {
       src: `${S5_PATH}/assets/art/scenes/campus-quad-battlemap.jpg`,
       width: 1376,
       height: 768,
-      tokenVision: true,
-      fog: true
+      tokenVision: false,
+      fog: false
     },
     {
       name: "University Lecture Hall — Auditorium",
       src: `${S5_PATH}/assets/art/scenes/lecture-hall-battlemap.jpg`,
       width: 1376,
       height: 768,
-      tokenVision: true,
-      fog: true
+      tokenVision: false,
+      fog: false
     }
   ];
 
+  const createdScenes = [];
   for (const sDef of sceneDefinitions) {
-    await upsertScene(sDef, sceneFolder);
+    createdScenes.push(await upsertScene(sDef, sceneFolder));
   }
+
+  // Populate Campus Quad and Auditorium with targetable bystanders and disguised adversaries
+  const bystanderActor = await ensureS5BystanderActor();
+  const quadScene = createdScenes[1];
+  const auditoriumScene = createdScenes[2];
+  if (quadScene) await populateQuadScene(quadScene, bystanderActor);
+  if (auditoriumScene) await populateAuditoriumScene(auditoriumScene, bystanderActor);
 
   // 2. JOURNALS
   const journalFolder = await ensureFolder("Edited — Session 5 Journals", "JournalEntry");
@@ -469,22 +711,25 @@ async function installSession5() {
     {
       name: "08. Reveal Medula",
       command: `const actor = game.actors.getName("Medulas (Edited Medusa)") ?? game.actors.find(a => a.name.includes("Medula"));
-if (canvas.tokens.controlled.length > 0) {
-  for (const token of canvas.tokens.controlled) {
-    if (actor) {
-      await token.document.update({
-        name: actor.name,
-        texture: { src: actor.prototypeToken?.texture?.src ?? actor.img },
-        hidden: false
-      });
-    }
+let tokens = canvas.tokens.controlled.length > 0
+  ? canvas.tokens.controlled
+  : canvas.tokens.placeables.filter(t => t.document.getFlag("edited-campaign-tools", "isDisguisedMedula") || t.name === "Academic Reviewer");
+
+for (const token of tokens) {
+  if (actor) {
+    await token.document.update({
+      name: actor.name,
+      texture: { src: "modules/edited-campaign-tools/assets/art/actors/medulas/medulas-token.webp" },
+      disposition: CONST.TOKEN_DISPOSITIONS.HOSTILE,
+      hidden: false
+    });
   }
 }
 ChatMessage.create({
   speaker: { alias: "Narrator" },
   content: \`<div style="border-left: 3px solid #722ed1; padding: 0.6rem; background: #1a162b; color: #f0f0f0; font-family: 'Inter', sans-serif;">
     <h3 style="margin: 0; color: #b37feb; font-size: 1.1rem;">👁️ THE REVELATION</h3>
-    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The academic reviewer in the third row rises. Microscopic copper serpents and living editorial ink hiss beneath her scarf as the <strong>Medula</strong> fixes her gaze upon the stage!</p>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The academic reviewer in the second row rises. Microscopic copper serpents and living editorial ink hiss beneath her scarf as the <strong>Medula</strong> fixes her petrifying gaze upon the auditorium!</p>
   </div>\`
 });
 actor?.sheet.render(true);`,
@@ -493,22 +738,25 @@ actor?.sheet.render(true);`,
     {
       name: "09. Reveal Satyn",
       command: `const actor = game.actors.getName("Satyn (Edited Satyr)") ?? game.actors.find(a => a.name.includes("Satyn"));
-if (canvas.tokens.controlled.length > 0) {
-  for (const token of canvas.tokens.controlled) {
-    if (actor) {
-      await token.document.update({
-        name: actor.name,
-        texture: { src: actor.prototypeToken?.texture?.src ?? actor.img },
-        hidden: false
-      });
-    }
+let tokens = canvas.tokens.controlled.length > 0
+  ? canvas.tokens.controlled
+  : canvas.tokens.placeables.filter(t => t.document.getFlag("edited-campaign-tools", "isDisguisedSatyn") || t.name === "Campus Security Guard");
+
+for (const token of tokens) {
+  if (actor) {
+    await token.document.update({
+      name: actor.name,
+      texture: { src: "modules/edited-campaign-tools/assets/art/actors/satyn/satyn-token.webp" },
+      disposition: CONST.TOKEN_DISPOSITIONS.HOSTILE,
+      hidden: false
+    });
   }
 }
 ChatMessage.create({
   speaker: { alias: "Narrator" },
   content: \`<div style="border-left: 3px solid #ff4d4f; padding: 0.6rem; background: #261215; color: #f0f0f0; font-family: 'Inter', sans-serif;">
     <h3 style="margin: 0; color: #ff7875; font-size: 1.1rem;">🐐 INKY RIFT</h3>
-    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">A rift of viscous black ink tears open with a briny hiss. A <strong>Satyn</strong> emerges, curved horns glinting with editorial script!</p>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.5;">The campus security guards slam the heavy auditorium doors shut. Horns curl outward through their caps as viscous black ink spills across their hooves—the <strong>Satyns</strong> reveal their true forms!</p>
   </div>\`
 });
 actor?.sheet.render(true);`,
@@ -526,8 +774,8 @@ actor?.sheet.render(true);`,
   }
 
   // Update installed version tracking
-  await game.settings.set(S5_MODULE_ID, "session5InstalledVer", 2);
-  ui.notifications.info("Session 5 content (3 Scenes, 3 Journals, 10 Curated Macros) updated and ready!");
+  await game.settings.set(S5_MODULE_ID, "session5InstalledVer", 3);
+  ui.notifications.info("Session 5 content (3 Scenes, 3 Journals, 10 Curated Macros, Populated Battlemaps) updated and ready!");
 }
 
 async function setupSession5Hotbar(page = 1) {

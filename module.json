@@ -2,10 +2,10 @@
   "id": "edited-campaign-tools",
   "title": "Edited Campaign Tools",
   "description": "Foundry VTT campaign toolkit for The Margin: Session 5 campus scenes, book tour flyer handout, GM matrix, canonical birthrights, automated hotbar, Legend HUD, and audio cues.",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "url": "https://github.com/lukegforeman/edited-campaign-tools",
   "manifest": "https://raw.githubusercontent.com/lukegforeman/edited-campaign-tools/main/module.json",
-  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.11/Edited_Campaign_Tools_Module_v1.1.11.zip",
+  "download": "https://github.com/lukegforeman/edited-campaign-tools/releases/download/v1.1.12/Edited_Campaign_Tools_Module_v1.1.12.zip",
   "authors": [
     {
       "name": "Campaign GM + Luke Foreman"
@@ -35,7 +35,8 @@
     "scripts/edward-duality.js",
     "scripts/session1-installer.js",
     "scripts/session1-fixes.js",
-    "scripts/session5-installer.js"
+    "scripts/session5-installer.js",
+    "scripts/combat-qol.js"
   ],
   "styles": [
     "styles/edited-tools.css"

@@ -213,6 +213,57 @@ async function clearCrowd({quiet = false} = {}) {
   return ids.length;
 }
 
+async function ensureBystanderActor() {
+  let actor = game.actors.getName("Campus Bystander");
+  if (!actor) {
+    const folder = game.folders.find(f => f.type === "Actor" && f.name.includes("NPC"))
+      ?? await Folder.create({ name: "Edited — NPCs", type: "Actor", sorting: "a" });
+    actor = await Actor.create({
+      name: "Campus Bystander",
+      type: "npc",
+      img: `${TOKEN_ROOT}/assets/art/tokens/bystanders/bystander-05.webp`,
+      folder: folder.id,
+      system: {
+        attributes: {
+          hp: { value: 6, max: 6, temp: 0, formula: "1d8 + 1" },
+          ac: { flat: 10, calc: "flat" },
+          movement: { walk: 30, units: "ft" }
+        },
+        abilities: {
+          str: { value: 10 },
+          dex: { value: 10 },
+          con: { value: 10 },
+          int: { value: 10 },
+          wis: { value: 10 },
+          cha: { value: 10 }
+        },
+        details: {
+          cr: 0,
+          type: { value: "humanoid", subtype: "human" },
+          alignment: "Neutral",
+          biography: { value: "<p>An ordinary university student or faculty bystander on campus. Can be targeted, damaged, or healed.</p>" }
+        }
+      },
+      prototypeToken: {
+        name: "Campus Bystander",
+        actorLink: false,
+        disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
+        displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+        bar1: { attribute: "attributes.hp" },
+        width: 1,
+        height: 1,
+        texture: {
+          src: `${TOKEN_ROOT}/assets/art/tokens/bystanders/bystander-05.webp`,
+          scaleX: 0.92,
+          scaleY: 0.92
+        }
+      }
+    });
+  }
+  return actor;
+}
+
 async function crowdBuilder() {
   if (!game.user?.isGM) return ui.notifications.warn("Only the GM can create crowd tokens.");
   if (!canvas?.ready) return ui.notifications.warn("Open a Scene before creating a crowd.");
@@ -248,6 +299,7 @@ async function crowdBuilder() {
   const spread = Math.max(2, Math.min(30, Number(form.spread) || 6));
   if (form.clearExisting) await clearCrowd({quiet: true});
 
+  const bystanderActor = await ensureBystanderActor();
   const scene = canvas.scene;
   const gridSize = scene.grid?.size || 100;
   const bounds = sceneBounds(scene);
@@ -255,8 +307,8 @@ async function crowdBuilder() {
   const images = shuffle(BYSTANDER_IMAGES);
   const level = scene.initialLevel?.id ?? scene.firstLevel?.id ?? null;
   const data = positions.map((position, index) => ({
-    name: "Bystander",
-    actorId: null,
+    name: "Campus Bystander",
+    actorId: bystanderActor.id,
     actorLink: false,
     x: position.x - gridSize / 2,
     y: position.y - gridSize / 2,
@@ -266,8 +318,9 @@ async function crowdBuilder() {
     level,
     rotation: Math.round(Math.random() * 360),
     disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL,
-    displayName: CONST.TOKEN_DISPLAY_MODES.NONE,
-    displayBars: CONST.TOKEN_DISPLAY_MODES.NONE,
+    displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER,
+    bar1: { attribute: "attributes.hp" },
     texture: {
       src: images[index % images.length],
       scaleX: 0.92,
@@ -279,7 +332,7 @@ async function crowdBuilder() {
   }));
   if (!data.length) return ui.notifications.warn("The selected area was too small to place a crowd.");
   const created = await scene.createEmbeddedDocuments("Token", data);
-  ui.notifications.info(`${created.length} sheetless bystanders added to the Token layer.`);
+  ui.notifications.info(`${created.length} targetable bystanders added to the Token layer.`);
   return created;
 }
 
@@ -352,8 +405,10 @@ Hooks.once("ready", () => {
     toggleMonster,
     crowdBuilder,
     clearCrowd,
+    ensureBystanderActor,
     transformations: TRANSFORMATIONS
   };
 });
 
-export {clearCrowd, crowdBuilder, installTokenTools, toggleMonster};
+export {clearCrowd, crowdBuilder, ensureBystanderActor, installTokenTools, toggleMonster};
+
